@@ -71,7 +71,7 @@ export default function Hero() {
   }, [apiBaseUrl]);
 
   return (
-    <div className="relative h-[40vw] md:h-[25vw] min-h-[400px] mt-20 md:mt-10 pt-20 pb-12 bg-black rounded-2xl overflow-hidden mx-4 md:mx-8">
+    <div className="relative h-[40vw] md:h-[25vw] min-h-[400px] mt-10 md:mt-20 mb-10 md:mb-20 pt-20 pb-12 bg-black rounded-2xl overflow-hidden mx-4 md:mx-8">
       {/* Transparent Overlay */}
       <div className="absolute inset-0 bg-black/50 z-0" />
 

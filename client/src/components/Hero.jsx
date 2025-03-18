@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Play, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import TiltedCard from "./TiltedCard";
 
 export default function Hero() {
   const [featuredAnime, setFeaturedAnime] = useState({
@@ -77,13 +78,33 @@ export default function Hero() {
       <div className="absolute inset-0 flex items-center justify-between px-4 md:px-16 z-10">
         {/* Poster Image on the Left with Effects */}
         <div className="w-[40%] md:w-1/4 h-auto flex justify-center">
-          <img
+          <TiltedCard
+            imageSrc={featuredAnime.poster}
+            altText={featuredAnime.title}
+            captionText={featuredAnime.title}
+            // containerHeight="50vw"
+            // containerWidth="auto"
+            // imageHeight="50vw"
+            // imageWidth="auto"
+            rotateAmplitude={12}
+            scaleOnHover={1.2}
+            showMobileWarning={false}
+            showTooltip={true}
+            displayOverlayContent={true}
+            overlayContent={
+              <p className="tilted-card-demo-text">{featuredAnime.title}</p>
+            }
+            className={`w-auto h-[50vw] max-h-[400px] object-cover rounded-2xl shadow-lg transition-all duration-500 transform ${
+              fade ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            }`}
+          />
+          {/* <img
             src={featuredAnime.poster}
             alt={featuredAnime.title}
             className={`w-auto h-[50vw] max-h-[400px] object-cover rounded-2xl shadow-lg transition-all duration-500 transform ${
               fade ? "opacity-100 scale-100" : "opacity-0 scale-95"
             }`}
-          />
+          /> */}
         </div>
 
         {/* Content on the Right */}

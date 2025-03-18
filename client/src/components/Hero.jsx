@@ -74,7 +74,6 @@ export default function Hero() {
     <div className="relative h-[40vw] md:h-[25vw] min-h-[400px] mt-10 md:mt-20 mb-10 md:mb-20 pt-20 pb-12 bg-black rounded-2xl overflow-hidden mx-4 md:mx-8">
       {/* Transparent Overlay */}
       <div className="absolute inset-0 bg-black/50 z-0" />
-
       <div className="absolute inset-0 flex items-center justify-between px-4 md:px-16 z-10">
         {/* Poster Image on the Left with Effects */}
         <div className="w-[40%] md:w-1/4 h-auto flex justify-center">

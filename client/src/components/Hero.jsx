@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Play, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import DecryptedText from "./DecryptedText";
 export default function Hero() {
   const [featuredAnime, setFeaturedAnime] = useState({
     title: "Loading...",
@@ -85,15 +85,22 @@ export default function Hero() {
             }`}
           />
         </div>
-
         {/* Content on the Right */}
         <div className="w-2/3 md:w-3/4 pl-4 md:pl-8 flex flex-col justify-center h-full text-white text-shadow">
           <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold">
-            {featuredAnime.title}
+            <DecryptedText
+              text={featuredAnime.title}
+              animateOn="view"
+              revealDirection="center"
+            />
           </h1>
           <div className="max-w-[80%] md:max-w-[60%] lg:max-w-[50%] mt-2">
             <p className="text-sm md:text-base lg:text-lg">
-              {featuredAnime.description}
+              <DecryptedText
+                text={featuredAnime.description}
+                animateOn="view"
+                revealDirection="center"
+              />
             </p>
           </div>
           <div className="flex gap-3 mt-4">

@@ -1,11 +1,10 @@
 "use client";
-import React from 'react';  // Add this line
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Movie {
-  id: number;
+  id: string; // Adjusted to string based on animeId from API
   title: string;
   imageUrl: string;
 }
@@ -63,15 +62,17 @@ export default function MovieRow({ title, movies }: MovieRowProps) {
           {movies.map((movie) => (
             <div
               key={movie.id}
-              className="min-w-[150px] md:min-w-[200px] lg:min-w-[250px] h-[84px] md:h-[113px] lg:h-[141px] cursor-pointer relative transition duration-200 ease-out md:hover:scale-105"
+              className="min-w-[100px] md:min-w-[150px] lg:min-w-[200px] h-[150px] md:h-[225px] lg:h-[300px] cursor-pointer relative transition duration-200 ease-out md:hover:scale-105"
             >
               <img
                 src={movie.imageUrl || "/placeholder.svg"}
                 alt={movie.title}
-                className="rounded-sm object-cover w-full h-full"
+                className="rounded-sm object-cover w-full h-full" // Ensures vertical images fit
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition-opacity hover:opacity-100">
-                <p className="text-xs md:text-sm text-white">{movie.title}</p>
+                <p className="text-xs md:text-sm text-white truncate">
+                  {movie.title}
+                </p>
               </div>
             </div>
           ))}

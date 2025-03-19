@@ -1,17 +1,12 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import Skeleton from "@mui/material/Skeleton";
 
 export default function MovieRow({ title, movies: initialMovies, genreId }) {
   const rowRef = useRef(null);
   const [isMoved, setIsMoved] = useState(false);
   const [movies, setMovies] = useState(initialMovies);
-
-  useEffect(() => {
-    setMovies(initialMovies);
-  }, [initialMovies]);
 
   const handleScroll = (direction) => {
     if (rowRef.current) {
@@ -36,13 +31,13 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
   return (
     <div className="space-y-2 px-4 md:px-12 mt-4 md:mt-8">
       <div className="flex justify-between items-center w-full">
-        <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-white">
+        <h2 className="text-lg md:text-xl lg:text-2xl font-semibold">
           {title}
         </h2>
         <Link to={getDetailLink()}>
           <Button
             variant="link"
-            className="text-sm md:text-base text-blue-400 hover:text-blue-600"
+            className="text-sm md:text-base text-white-600 hover:text-white-600"
           >
             See More
           </Button>
@@ -66,7 +61,7 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
           className="flex items-center space-x-2 overflow-x-scroll overflow-y-hidden scrollbar-hide"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {movies && movies.length > 0 ? (
+          {movies.length > 0 ? (
             movies.map((movie) => (
               <div
                 key={movie.id}
@@ -78,24 +73,14 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
                   className="rounded-md object-cover w-full h-full"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
-                  <p className="text-xs sm:text-sm md:text-base text-white font-medium truncate drop-shadow-md">
+                  <p className="text-sm md:text-base text-white font-medium truncate drop-shadow-md">
                     {movie.title}
                   </p>
                 </div>
               </div>
             ))
           ) : (
-            <div className="flex space-x-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton
-                  key={i}
-                  variant="rectangular"
-                  width={120}
-                  height={180}
-                  sx={{ bgcolor: "grey.800", borderRadius: "8px" }}
-                />
-              ))}
-            </div>
+            <p className="text-gray-400 text-sm">No anime available</p>
           )}
         </div>
 

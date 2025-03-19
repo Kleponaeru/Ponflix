@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "./Navbar";
+import Skeleton from "@mui/material/Skeleton";
 
 export default function DetailGenre() {
   const { genreId } = useParams();
@@ -45,7 +46,6 @@ export default function DetailGenre() {
           }
         }
 
-        console.log(`Total items for genre ${genreId}: ${allAnime.length}`);
         setAllAnimeData(allAnime);
         setTotalPages(Math.ceil(allAnime.length / itemsPerPage));
       } catch (error) {
@@ -89,26 +89,62 @@ export default function DetailGenre() {
     <>
       <Navbar />
       <main className="min-h-screen bg-black text-white pt-16 px-4 md:px-12">
-        <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 mt-12">
-          <Link
-            to="/"
-            className="text-red-500 hover:text-red-600 transition-colors"
-          >
-            Home
-          </Link>
-          <span className="text-gray-400">/</span>
-          <Link
-            to="/genres"
-            className="text-red-500 hover:text-red-600 transition-colors"
-          >
-            Genres
-          </Link>
-          <span className="text-gray-400">/</span>
-          <span className="text-white">{formatGenreName(genreId)}</span>
-        </nav>
+        {loading ? (
+          <div className="flex items-center gap-2 mb-6 mt-12">
+            <Skeleton
+              variant="text"
+              width={60}
+              height={50}
+              sx={{ bgcolor: "grey.800" }}
+            />
+            <span className="text-gray-400">/</span>
+            <Skeleton
+              variant="text"
+              width={80}
+              height={50}
+              sx={{ bgcolor: "grey.800" }}
+            />
+            <span className="text-gray-400">/</span>
+            <Skeleton
+              variant="text"
+              width={100}
+              height={50}
+              sx={{ bgcolor: "grey.800" }}
+            />
+          </div>
+        ) : (
+          <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 mt-12">
+            <Link
+              to="/"
+              className="text-red-500 hover:text-red-600 transition-colors"
+            >
+              Home
+            </Link>
+            <span className="text-gray-400">/</span>
+            <Link
+              to="/genres"
+              className="text-red-500 hover:text-red-600 transition-colors"
+            >
+              Genres
+            </Link>
+            <span className="text-gray-400">/</span>
+            <span className="text-white">{formatGenreName(genreId)}</span>
+          </nav>
+        )}
 
         {loading ? (
-          <p className="text-center">Loading...</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+            {[...Array(itemsPerPage)].map((_, index) => (
+              <Skeleton
+                key={index}
+                variant="rounded"
+                width={270}
+                height={380}
+                className="w-full aspect-[2/3] rounded-md"
+                sx={{ bgcolor: "grey.800" }}
+              />
+            ))}
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
@@ -131,7 +167,7 @@ export default function DetailGenre() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-400">
+                <p className="text-gray-400 col-span-full text-center">
                   No anime available for this genre.
                 </p>
               )}

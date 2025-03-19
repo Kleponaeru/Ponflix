@@ -109,7 +109,7 @@ export default function App() {
                         {[...Array(10)].map((_, i) => (
                           <Skeleton
                             key={i}
-                            variant="rectangular"
+                            variant="rounded"
                             width={160}
                             height={240}
                             sx={{ bgcolor: "grey.800", borderRadius: "8px" }}

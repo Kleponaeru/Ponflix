@@ -9,13 +9,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Define the Anime type based on API data
+interface Anime {
+  title: string;
+  animeId: string;
+  href: string;
+  otakudesuUrl: string;
+}
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Anime[]>([]);
+  const [allAnime, setAllAnime] = useState<Anime[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const apiBaseUrl = "http://localhost:3001";
 
+  // Handle scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
@@ -25,6 +37,51 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Fetch all anime data on mount
+  useEffect(() => {
+    const fetchAllAnime = async () => {
+      try {
+        const res = await fetch(`${apiBaseUrl}/otakudesu/anime`);
+        const data = await res.json();
+        console.log("API Response:", data); // Debug the response structure
+
+        // Ensure data is an array and flatten it
+        let flattenedAnime: Anime[] = [];
+        if (Array.isArray(data)) {
+          flattenedAnime = data.flatMap(
+            (group: { startWith: string; animeList: Anime[] }) =>
+              group.animeList || []
+          );
+        } else {
+          console.warn("API data is not an array:", data);
+        }
+
+        setAllAnime(flattenedAnime);
+      } catch (error) {
+        console.error("Error fetching all anime:", error);
+        setAllAnime([]);
+      }
+    };
+
+    fetchAllAnime();
+  }, [apiBaseUrl]);
+
+  // Filter anime based on searchQuery
+  useEffect(() => {
+    if (!searchQuery.trim() || !isSearchOpen) {
+      setSearchResults([]);
+      return;
+    }
+
+    const filteredResults = allAnime
+      .filter((anime) =>
+        anime.title.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .slice(0, 5);
+
+    setSearchResults(filteredResults);
+  }, [searchQuery, isSearchOpen, allAnime]);
+
   // Toggle search input
   const toggleSearch = () => {
     setIsSearchOpen((prev) => !prev);
@@ -33,18 +90,21 @@ export default function Navbar() {
         searchInputRef.current.focus();
       }
     }, 50);
+    if (isSearchOpen) setSearchResults([]);
   };
 
   // Close search input when clicking outside
   const handleBlur = () => {
-    setTimeout(() => setIsSearchOpen(false), 200);
+    setTimeout(() => {
+      setIsSearchOpen(false);
+      setSearchResults([]);
+    }, 200);
   };
 
   // Handle search submission
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Searching for:", searchQuery);
-    // Perform search logic here
   };
 
   return (
@@ -104,12 +164,12 @@ export default function Navbar() {
                 )}
               </Button>
 
-              {/* Search Input Field (inside navbar) */}
+              {/* Search Input Field */}
               <form
                 onSubmit={handleSearch}
                 className={`overflow-hidden transition-all duration-300 ${
                   isSearchOpen ? "w-48 md:w-64" : "w-0"
-                } bg-black rounded-md flex items-center border border-gray-700`}
+                } bg-black rounded-md flex items-center border border-gray-800`}
               >
                 <input
                   ref={searchInputRef}
@@ -121,6 +181,28 @@ export default function Navbar() {
                   onBlur={handleBlur}
                 />
               </form>
+
+              {/* Search Results Dropdown */}
+              {isSearchOpen && searchResults.length > 0 && (
+                <div className="absolute top-12 right-0 w-64 md:w-80 bg-black/95 border border-gray-800 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                  {searchResults.map((anime) => (
+                    <Link
+                      key={anime.animeId}
+                      to={anime.href}
+                      className="flex items-center gap-3 p-2 hover:bg-gray-800 transition-colors"
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        setSearchResults([]);
+                      }}
+                    >
+                      <div className="w-12 h-18 bg-gray-700 rounded-md" />
+                      <span className="text-white text-sm truncate">
+                        {anime.title}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Notification Button */}

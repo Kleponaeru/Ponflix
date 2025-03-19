@@ -1,8 +1,11 @@
-"use client";
 import { useState, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import Hero from "./components/Hero";
 import MovieRow from "./components/MovieRow";
 import Navbar from "./components/Navbar";
+import DetailGenre from "./components/DetailGenre";
+import OngoingDetail from "./components/OngoingDetail"; // Create this
+import CompletedDetail from "./components/CompletedDetail"; // Create this
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -73,23 +76,33 @@ export default function App() {
   }, [apiBaseUrl]);
 
   return (
-    <main className="min-h-screen bg-black text-white pt-16">
-      <Navbar />
-      <Hero />
-      <div className="relative z-10 pb-10">
-        {categories.length > 0 ? (
-          categories.map((category) => (
-            <MovieRow
-              key={category.title}
-              title={category.title}
-              movies={category.movies}
-              genreId={category.genreId} // Add this line to pass genreId
-            />
-          ))
-        ) : (
-          <p className="text-center">Loading anime data...</p>
-        )}
-      </div>
-    </main>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <main className="min-h-screen bg-black text-white pt-16">
+            <Navbar />
+            <Hero />
+            <div className="relative z-10 pb-10">
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <MovieRow
+                    key={category.title}
+                    title={category.title}
+                    movies={category.movies}
+                    genreId={category.genreId}
+                  />
+                ))
+              ) : (
+                <p className="text-center">Loading anime data...</p>
+              )}
+            </div>
+          </main>
+        }
+      />
+      <Route path="/genres/:genreId" element={<DetailGenre />} />
+      <Route path="/ongoing" element={<OngoingDetail />} />
+      <Route path="/completed" element={<CompletedDetail />} />
+    </Routes>
   );
 }

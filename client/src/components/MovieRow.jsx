@@ -1,15 +1,16 @@
-"use client";
 import React, { useState, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export default function MovieRow({ title, movies: initialMovies, genreId }) {
   const rowRef = useRef(null);
   const [isMoved, setIsMoved] = useState(false);
   const [movies, setMovies] = useState(initialMovies);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const apiBaseUrl = "http://localhost:3001";
+
+  console.log(
+    `MovieRow - Title: ${title}, genreId: ${genreId}, Movies length: ${movies.length}`
+  );
 
   const handleScroll = (direction) => {
     if (rowRef.current) {
@@ -24,43 +25,11 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
     }
   };
 
-  const handleSeeMore = async () => {
-    if (!hasMore) return;
-
-    try {
-      const nextPage = page + 1;
-      let url;
-
-      // Determine the correct API endpoint based on the title or genreId
-      if (title === "Ongoing Anime") {
-        url = `${apiBaseUrl}/otakudesu/ongoing?page=${nextPage}`;
-      } else if (title === "Completed Anime") {
-        url = `${apiBaseUrl}/otakudesu/completed?page=${nextPage}`;
-      } else if (genreId) {
-        url = `${apiBaseUrl}/otakudesu/genres/${genreId}?page=${nextPage}`;
-      } else {
-        return;
-      }
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      const newMovies = data.data.animeList.map((anime) => ({
-        id: anime.animeId,
-        title: anime.title,
-        imageUrl: anime.poster,
-      }));
-
-      setMovies((prevMovies) => [...prevMovies, ...newMovies]);
-      setPage(nextPage);
-
-      if (!newMovies.length || newMovies.length < 10) {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error(`Error fetching more anime for ${title}:`, error);
-      setHasMore(false);
-    }
+  const getDetailLink = () => {
+    if (title === "Ongoing Anime") return "/ongoing";
+    if (title === "Completed Anime") return "/completed";
+    if (genreId) return `/genres/${genreId}`;
+    return "#";
   };
 
   return (
@@ -69,15 +38,14 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
         <h2 className="text-lg md:text-xl lg:text-2xl font-semibold">
           {title}
         </h2>
-        {hasMore && (
+        <Link to={getDetailLink()}>
           <Button
             variant="link"
-            className="text-sm md:text-base text-slate-100"
-            onClick={handleSeeMore}
+            className="text-sm md:text-base text-blue-400 hover:text-blue-600"
           >
             See More
           </Button>
-        )}
+        </Link>
       </div>
 
       <div className="group relative">

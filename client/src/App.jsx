@@ -1,8 +1,11 @@
-"use client";
 import { useState, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import Hero from "./components/Hero";
 import MovieRow from "./components/MovieRow";
 import Navbar from "./components/Navbar";
+import DetailGenre from "./components/DetailGenre";
+import OngoingDetail from "./components/OngoingDetail"; // Create this
+import CompletedDetail from "./components/CompletedDetail"; // Create this
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -11,15 +14,17 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ongoingRes, completedRes] = await Promise.all([
+        const [ongoingRes, completedRes, genresRes] = await Promise.all([
           fetch(`${apiBaseUrl}/otakudesu/ongoing?page=1`),
           fetch(`${apiBaseUrl}/otakudesu/completed?page=1`),
+          fetch(`${apiBaseUrl}/otakudesu/genres`),
         ]);
 
         const ongoingData = await ongoingRes.json();
         const completedData = await completedRes.json();
+        const genresData = await genresRes.json();
 
-        const fetchedCategories = [
+        const baseCategories = [
           {
             title: "Ongoing Anime",
             movies: ongoingData.data.animeList.map((anime) => ({
@@ -38,7 +43,29 @@ export default function App() {
           },
         ];
 
-        setCategories(fetchedCategories);
+        const allGenres = genresData.data.genreList;
+        const genrePromises = allGenres.map((genre) =>
+          fetch(`${apiBaseUrl}/otakudesu/genres/${genre.genreId}?page=1`)
+            .then((res) => res.json())
+            .catch((error) => {
+              console.error(`Error fetching genre ${genre.title}:`, error);
+              return { data: { animeList: [] } };
+            })
+        );
+
+        const genreResults = await Promise.all(genrePromises);
+
+        const genreCategories = genreResults.map((result, index) => ({
+          title: allGenres[index].title,
+          genreId: allGenres[index].genreId,
+          movies: result.data.animeList.map((anime) => ({
+            id: anime.animeId,
+            title: anime.title,
+            imageUrl: anime.poster,
+          })),
+        }));
+
+        setCategories([...baseCategories, ...genreCategories]);
       } catch (error) {
         console.error("Error fetching Otakudesu data:", error);
         setCategories([]);
@@ -49,22 +76,33 @@ export default function App() {
   }, [apiBaseUrl]);
 
   return (
-    <main className="min-h-screen bg-black text-white pt-16">
-      <Navbar />
-      <Hero />
-      <div className="relative z-10 pb-10">
-        {categories.length > 0 ? (
-          categories.map((category) => (
-            <MovieRow
-              key={category.title}
-              title={category.title}
-              movies={category.movies}
-            />
-          ))
-        ) : (
-          <p className="text-center">Loading anime data...</p>
-        )}
-      </div>
-    </main>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <main className="min-h-screen bg-black text-white pt-16">
+            <Navbar />
+            <Hero />
+            <div className="relative z-10 pb-10">
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <MovieRow
+                    key={category.title}
+                    title={category.title}
+                    movies={category.movies}
+                    genreId={category.genreId}
+                  />
+                ))
+              ) : (
+                <p className="text-center">Loading anime data...</p>
+              )}
+            </div>
+          </main>
+        }
+      />
+      <Route path="/genres/:genreId" element={<DetailGenre />} />
+      <Route path="/ongoing" element={<OngoingDetail />} />
+      <Route path="/completed" element={<CompletedDetail />} />
+    </Routes>
   );
 }

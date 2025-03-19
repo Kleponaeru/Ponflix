@@ -8,10 +8,6 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
   const [isMoved, setIsMoved] = useState(false);
   const [movies, setMovies] = useState(initialMovies);
 
-  console.log(
-    `MovieRow - Title: ${title}, genreId: ${genreId}, Movies length: ${movies.length}`
-  );
-
   const handleScroll = (direction) => {
     if (rowRef.current) {
       const { scrollLeft, clientWidth } = rowRef.current;
@@ -41,18 +37,18 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
         <Link to={getDetailLink()}>
           <Button
             variant="link"
-            className="text-sm md:text-base text-blue-400 hover:text-blue-600"
+            className="text-sm md:text-base text-white-600 hover:text-white-600"
           >
             See More
           </Button>
         </Link>
       </div>
 
-      <div className="group relative">
+      <div className="relative">
         <Button
           variant="ghost"
           size="icon"
-          className={`absolute top-0 bottom-0 left-2 z-40 m-auto h-9 w-9 opacity-0 transition hover:scale-125 group-hover:opacity-100 ${
+          className={`absolute top-0 bottom-0 left-2 z-40 m-auto h-9 w-9 opacity-0 transition hover:scale-125 hover:opacity-100 ${
             !isMoved && "hidden"
           }`}
           onClick={() => handleScroll("left")}
@@ -62,22 +58,22 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
 
         <div
           ref={rowRef}
-          className="flex items-center space-x-2 overflow-x-scroll scrollbar-hide"
+          className="flex items-center space-x-2 overflow-x-scroll overflow-y-hidden scrollbar-hide"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {movies.length > 0 ? (
             movies.map((movie) => (
               <div
                 key={movie.id}
-                className="min-w-[120px] md:min-w-[160px] lg:min-w-[220px] h-[180px] md:h-[240px] lg:h-[320px] cursor-pointer relative transition duration-200 ease-out hover:scale-105"
+                className="group min-w-[120px] md:min-w-[160px] lg:min-w-[220px] h-[180px] md:h-[240px] lg:h-[320px] cursor-pointer relative transition duration-200 ease-out hover:scale-105"
               >
                 <img
                   src={movie.imageUrl || "/placeholder.svg"}
                   alt={movie.title}
                   className="rounded-md object-cover w-full h-full"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition-opacity hover:opacity-100">
-                  <p className="text-xs md:text-sm text-white truncate">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
+                  <p className="text-sm md:text-base text-white font-medium truncate drop-shadow-md">
                     {movie.title}
                   </p>
                 </div>
@@ -91,7 +87,7 @@ export default function MovieRow({ title, movies: initialMovies, genreId }) {
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-0 bottom-0 right-2 z-40 m-auto h-9 w-9 opacity-0 transition hover:scale-125 group-hover:opacity-100"
+          className="absolute top-0 bottom-0 right-2 z-40 m-auto h-9 w-9 opacity-0 transition hover:scale-125 hover:opacity-100"
           onClick={() => handleScroll("right")}
         >
           <ChevronRight className="h-6 w-6" />

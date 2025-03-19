@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import Navbar from "./Navbar";
 
 export default function CompletedDetail() {
   const [animeList, setAnimeList] = useState([]);
+  const [allAnimeData, setAllAnimeData] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const apiBaseUrl = "http://localhost:3001";
   const itemsPerPage = 15;
 
+  // Fetch all data on component mount
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
@@ -41,11 +45,11 @@ export default function CompletedDetail() {
         }
 
         console.log(`Total items for completed: ${allAnime.length}`);
-        setAnimeList(allAnime.slice(0, itemsPerPage));
+        setAllAnimeData(allAnime);
         setTotalPages(Math.ceil(allAnime.length / itemsPerPage));
       } catch (error) {
         console.error("Error fetching all completed anime:", error);
-        setAnimeList([]);
+        setAllAnimeData([]);
         setTotalPages(0);
       } finally {
         setLoading(false);
@@ -55,37 +59,14 @@ export default function CompletedDetail() {
     fetchAllData();
   }, []);
 
+  // Update displayed anime whenever page changes or all data is loaded
   useEffect(() => {
-    if (page === 1) return;
-
-    const fetchPageData = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${apiBaseUrl}/otakudesu/completed?page=${page}`
-        );
-        const data = await res.json();
-
-        const newAnimeList = data.data.animeList.map((anime) => ({
-          id: anime.animeId,
-          title: anime.title,
-          imageUrl: anime.poster,
-        }));
-
-        setAnimeList(newAnimeList);
-      } catch (error) {
-        console.error(
-          `Error fetching page ${page} for completed anime:`,
-          error
-        );
-        setAnimeList([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPageData();
-  }, [page]);
+    if (allAnimeData.length > 0) {
+      const startIndex = (page - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      setAnimeList(allAnimeData.slice(startIndex, endIndex));
+    }
+  }, [page, allAnimeData]);
 
   const handlePrevPage = () => {
     if (page > 1) setPage(page - 1);
@@ -96,62 +77,76 @@ export default function CompletedDetail() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white pt-16 px-4 md:px-12">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Completed Anime</h1>
-      {loading ? (
-        <p className="text-center">Loading...</p>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {animeList.length > 0 ? (
-              animeList.map((anime) => (
-                <div
-                  key={anime.id}
-                  className="min-w-[120px] h-[180px] md:h-[240px] cursor-pointer relative transition duration-200 ease-out hover:scale-105"
-                >
-                  <img
-                    src={anime.imageUrl || "/placeholder.svg"}
-                    alt={anime.title}
-                    className="rounded-md object-cover w-full h-full"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 transition-opacity hover:opacity-100">
-                    <p className="text-xs md:text-sm text-white truncate">
-                      {anime.title}
-                    </p>
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-black text-white pt-16 px-4 md:px-12">
+        <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 mt-12">
+          <Link
+            to="/"
+            className="text-red-500 hover:text-red-600 transition-colors"
+          >
+            Home
+          </Link>
+          <span className="text-gray-400">/</span>
+          <span className="text-white">Completed Anime</span>
+        </nav>
+        {loading ? (
+          <p className="text-center">Loading...</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+              {animeList.length > 0 ? (
+                animeList.map((anime) => (
+                  <div
+                    key={anime.id}
+                    className="group w-full aspect-[2/3] cursor-pointer relative transition-transform duration-200 ease-out hover:scale-105"
+                  >
+                    <img
+                      src={anime.imageUrl || "/placeholder.svg"}
+                      alt={anime.title}
+                      className="rounded-md object-cover w-full h-full"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-in-out">
+                      <p className="text-xs sm:text-sm md:text-base text-white font-medium truncate drop-shadow-md">
+                        {anime.title}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-400">No completed anime available.</p>
-            )}
-          </div>
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePrevPage}
-                disabled={page === 1}
-                className="text-blue-400 hover:text-blue-600"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-              <p className="text-sm md:text-base">
-                {page} of {totalPages}
-              </p>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNextPage}
-                disabled={page === totalPages}
-                className="text-blue-400 hover:text-blue-600"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
+                ))
+              ) : (
+                <p className="text-gray-400">No completed anime available.</p>
+              )}
             </div>
-          )}
-        </>
-      )}
-    </main>
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-4 mt-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrevPage}
+                  disabled={page === 1}
+                  className="text-red-500 hover:text-red-600 mb-12 mt-12"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <p className="text-sm md:text-base mb-12 mt-12">
+                  <b>
+                    {page} of {totalPages}
+                  </b>
+                </p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNextPage}
+                  disabled={page === totalPages}
+                  className="text-red-500 hover:text-red-600 mb-12 mt-12"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </>
   );
 }

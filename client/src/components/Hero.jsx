@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Play, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DecryptedText from "./DecryptedText";
+import DecryptedText from "./ui/DecryptedText";
 import Skeleton from "@mui/material/Skeleton";
 
 export default function Hero() {

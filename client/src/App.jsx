@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Hero from "./components/Hero";
 import MovieRow from "./components/MovieRow";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/ui/Navbar";
 import DetailGenre from "./components/DetailGenre";
 import OngoingDetail from "./components/OnGoingDetail";
 import CompletedDetail from "./components/CompletedDetail";

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Navbar from "./Navbar";
+import Navbar from "./ui/Navbar";
 import Skeleton from "@mui/material/Skeleton";
 
 export default function DetailGenre() {

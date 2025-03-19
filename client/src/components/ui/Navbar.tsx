@@ -1,8 +1,6 @@
-
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Bell, ChevronDown, Search, User } from "lucide-react";
+import { Bell, ChevronDown, Search, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,19 +12,40 @@ import {
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 0) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 0);
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Toggle search input
+  const toggleSearch = () => {
+    setIsSearchOpen((prev) => !prev);
+    setTimeout(() => {
+      if (!isSearchOpen && searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 50);
+  };
+
+  // Close search input when clicking outside
+  const handleBlur = () => {
+    setTimeout(() => setIsSearchOpen(false), 200);
+  };
+
+  // Handle search submission
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("Searching for:", searchQuery);
+    // Perform search logic here
+  };
 
   return (
     <>
@@ -67,29 +86,49 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden text-white"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            Browse{" "}
-            <ChevronDown
-              className={`ml-1 transition-transform ${
-                isMobileMenuOpen ? "rotate-180" : ""
-              }`}
-            />
-          </Button>
-
-          {/* Right Side Icons */}
+          {/* Right Side Section */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="text-white">
-              <Search className="h-5 w-5" />
-            </Button>
+            {/* Search Section */}
+            <div className="relative flex items-center">
+              {/* Search Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white"
+                onClick={toggleSearch}
+              >
+                {isSearchOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Search className="h-5 w-5" />
+                )}
+              </Button>
+
+              {/* Search Input Field (inside navbar) */}
+              <form
+                onSubmit={handleSearch}
+                className={`overflow-hidden transition-all duration-300 ${
+                  isSearchOpen ? "w-48 md:w-64" : "w-0"
+                } bg-black rounded-md flex items-center border border-gray-700`}
+              >
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  className="bg-transparent border-none outline-none text-white px-3 py-1 w-full"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onBlur={handleBlur}
+                />
+              </form>
+            </div>
+
+            {/* Notification Button */}
             <Button variant="ghost" size="icon" className="text-white">
               <Bell className="h-5 w-5" />
             </Button>
+
+            {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

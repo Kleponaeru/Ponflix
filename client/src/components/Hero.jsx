@@ -414,7 +414,7 @@ export default function Hero() {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="border-gray-500 text-black hover:bg-white/10 flex items-center gap-2 px-6 py-6 rounded-xl"
+                      className="border-gray-500 text-black hover:bg-white/10 hover:text-white flex items-center gap-2 px-6 py-6 rounded-xl"
                     >
                       <Info className="h-5 w-5" />
                       <span className="font-semibold">More Info</span>

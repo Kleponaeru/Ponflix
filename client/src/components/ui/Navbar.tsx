@@ -192,7 +192,7 @@ export default function Navbar() {
                   searchResults.map((anime) => (
                     <Link
                       key={anime.animeId}
-                      to={`/anime/${anime.animeId}`}
+                      to={`/stream/${anime.animeId}`}
                       className="flex items-center gap-3 p-3 hover:bg-gray-800 transition-colors"
                       onClick={() => {
                         setIsSearchOpen(false);

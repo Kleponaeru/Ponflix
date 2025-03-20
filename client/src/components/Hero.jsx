@@ -2,13 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { Play, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DecryptedText from "./DecryptedText";
+import DecryptedText from "./ui/DecryptedText";
+import Skeleton from "@mui/material/Skeleton";
+
 export default function Hero() {
-  const [featuredAnime, setFeaturedAnime] = useState({
-    title: "Loading...",
-    poster: "/placeholder.svg?height=450&width=300",
-    description: "Fetching anime data...",
-  });
+  const [featuredAnime, setFeaturedAnime] = useState(null); // Start as null for loading state
   const [fade, setFade] = useState(true); // For fade transition effect
   const apiBaseUrl = "http://localhost:3001"; // Your API URL
 
@@ -77,45 +75,95 @@ export default function Hero() {
       <div className="absolute inset-0 flex items-center justify-between px-4 md:px-16 z-10">
         {/* Poster Image on the Left with Effects */}
         <div className="w-[40%] md:w-1/4 h-auto flex justify-center">
-          <img
-            src={featuredAnime.poster}
-            alt={featuredAnime.title}
-            className={`w-auto h-[50vw] max-h-[400px] object-cover rounded-2xl shadow-lg transition-all duration-500 transform ${
-              fade ? "opacity-100 scale-100" : "opacity-0 scale-95"
-            }`}
-          />
+          {!featuredAnime ? (
+            <Skeleton
+              variant="rounded"
+              width={250}
+              height={400}
+              sx={{ bgcolor: "grey.800" }}
+            />
+          ) : (
+            <img
+              src={featuredAnime.poster}
+              alt={featuredAnime.title}
+              className={`w-auto h-[50vw] max-h-[400px] object-cover rounded-2xl shadow-lg transition-all duration-500 transform ${
+                fade ? "opacity-100 scale-100" : "opacity-0 scale-95"
+              }`}
+            />
+          )}
         </div>
         {/* Content on the Right */}
         <div className="w-2/3 md:w-3/4 pl-4 md:pl-8 flex flex-col justify-center h-full text-white text-shadow">
-          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold">
-            <DecryptedText
-              text={featuredAnime.title}
-              animateOn="view"
-              revealDirection="center"
-            />
-          </h1>
-          <div className="max-w-[80%] md:max-w-[60%] lg:max-w-[50%] mt-2">
-            <p className="text-sm md:text-base lg:text-lg">
-              <DecryptedText
-                text={featuredAnime.description}
-                animateOn="view"
-                revealDirection="center"
+          {!featuredAnime ? (
+            <>
+              <Skeleton
+                variant="text"
+                width="60%"
+                height={50}
+                sx={{ bgcolor: "grey.800" }}
               />
-            </p>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <Button className="flex items-center gap-2 bg-white text-black hover:bg-white/90">
-              <Play className="h-5 w-5" />
-              <span>Play</span>
-            </Button>
-            <Button
-              variant="secondary"
-              className="flex items-center gap-2 bg-gray-500/70 text-white hover:bg-gray-500/50"
-            >
-              <Info className="h-5 w-5" />
-              <span>More Info</span>
-            </Button>
-          </div>
+              <Skeleton
+                variant="text"
+                width="80%"
+                height={20}
+                className="mt-2"
+                sx={{ bgcolor: "grey.800" }}
+              />
+              <Skeleton
+                variant="text"
+                width="70%"
+                height={20}
+                className="mt-1"
+                sx={{ bgcolor: "grey.800" }}
+              />
+              <div className="flex gap-3 mt-4">
+                <Skeleton
+                  variant="rounded"
+                  width={100}
+                  height={36}
+                  sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
+                />
+                <Skeleton
+                  variant="rounded"
+                  width={120}
+                  height={36}
+                  sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold">
+                <DecryptedText
+                  text={featuredAnime.title}
+                  animateOn="view"
+                  revealDirection="center"
+                />
+              </h1>
+              <div className="max-w-[80%] md:max-w-[60%] lg:max-w-[50%] mt-2">
+                <p className="text-sm md:text-base lg:text-lg">
+                  <DecryptedText
+                    text={featuredAnime.description}
+                    animateOn="view"
+                    revealDirection="center"
+                  />
+                </p>
+              </div>
+              <div className="flex gap-3 mt-4">
+                <Button className="flex items-center gap-2 bg-white text-black hover:bg-white/90">
+                  <Play className="h-5 w-5" />
+                  <span>Play</span>
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="flex items-center gap-2 bg-gray-500/70 text-white hover:bg-gray-500/50"
+                >
+                  <Info className="h-5 w-5" />
+                  <span>More Info</span>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

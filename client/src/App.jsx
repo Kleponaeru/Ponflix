@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Hero from "./components/Hero";
 import MovieRow from "./components/MovieRow";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/ui/Navbar";
 import DetailGenre from "./components/DetailGenre";
-import OngoingDetail from "./components/OngoingDetail"; // Create this
-import CompletedDetail from "./components/CompletedDetail"; // Create this
+import OngoingDetail from "./components/OnGoingDetail";
+import CompletedDetail from "./components/CompletedDetail";
+import Skeleton from "@mui/material/Skeleton";
+import Stream from "./components/pages/Stream";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -94,7 +96,30 @@ export default function App() {
                   />
                 ))
               ) : (
-                <p className="text-center">Loading anime data...</p>
+                <div className="space-y-8 px-4 md:px-12">
+                  {/* Skeleton for 3 rows */}
+                  {[...Array(3)].map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Skeleton
+                        variant="text"
+                        width="20%"
+                        height={40}
+                        sx={{ bgcolor: "grey.800" }}
+                      />
+                      <div className="flex space-x-2">
+                        {[...Array(10)].map((_, i) => (
+                          <Skeleton
+                            key={i}
+                            variant="rounded"
+                            width={160}
+                            height={240}
+                            sx={{ bgcolor: "grey.800", borderRadius: "8px" }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </main>
@@ -103,6 +128,7 @@ export default function App() {
       <Route path="/genres/:genreId" element={<DetailGenre />} />
       <Route path="/ongoing" element={<OngoingDetail />} />
       <Route path="/completed" element={<CompletedDetail />} />
+      <Route path="/stream/:animeId" element={<Stream />} /> {/* Add Stream route */}
     </Routes>
   );
 }

@@ -9,12 +9,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Define the Anime type based on API data
+// Define the Anime type based on the search API response
 interface Anime {
   title: string;
   animeId: string;
   href: string;
   otakudesuUrl: string;
+  poster: string;
+  status?: string;
+  score?: string;
+  genreList?: {
+    title: string;
+    genreId: string;
+    href: string;
+    otakudesuUrl: string;
+  }[];
+}
+
+// Define the search API response structure
+interface SearchApiResponse {
+  ok: boolean;
+  statusCode: number;
+  statusMessage: string;
+  message: string;
+  data: {
+    animeList: Anime[];
+  };
 }
 
 export default function Navbar() {
@@ -23,88 +43,88 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Anime[]>([]);
-  const [allAnime, setAllAnime] = useState<Anime[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const apiBaseUrl = "http://localhost:3001";
 
   // Handle scroll effect
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0);
-    };
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 0);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch all anime data on mount
+  // Fetch search results from the API when searchQuery changes
   useEffect(() => {
-    const fetchAllAnime = async () => {
-      try {
-        const res = await fetch(`${apiBaseUrl}/otakudesu/anime`);
-        const data = await res.json();
-        console.log("API Response:", data); // Debug the response structure
-
-        // Ensure data is an array and flatten it
-        let flattenedAnime: Anime[] = [];
-        if (Array.isArray(data)) {
-          flattenedAnime = data.flatMap(
-            (group: { startWith: string; animeList: Anime[] }) =>
-              group.animeList || []
-          );
-        } else {
-          console.warn("API data is not an array:", data);
-        }
-
-        setAllAnime(flattenedAnime);
-      } catch (error) {
-        console.error("Error fetching all anime:", error);
-        setAllAnime([]);
-      }
-    };
-
-    fetchAllAnime();
-  }, [apiBaseUrl]);
-
-  // Filter anime based on searchQuery
-  useEffect(() => {
-    if (!searchQuery.trim() || !isSearchOpen) {
+    if (!searchQuery.trim()) {
       setSearchResults([]);
       return;
     }
 
-    const filteredResults = allAnime
-      .filter((anime) =>
-        anime.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .slice(0, 5);
+    setIsLoading(true);
 
-    setSearchResults(filteredResults);
-  }, [searchQuery, isSearchOpen, allAnime]);
+    const fetchSearchResults = async () => {
+      try {
+        const res = await fetch(
+          `${apiBaseUrl}/otakudesu/search?q=${encodeURIComponent(searchQuery)}`
+        );
+        const data: SearchApiResponse = await res.json();
+        // console.log("Search API Response:", data);
+
+        if (data.ok && data.data?.animeList) {
+          const limitedResults = data.data.animeList.slice(0, 5);
+          setSearchResults(limitedResults);
+        } else {
+          console.warn("No valid search results:", data);
+          setSearchResults([]);
+        }
+      } catch (error) {
+        console.error("Error fetching search results:", error);
+        setSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSearchResults();
+  }, [searchQuery, apiBaseUrl]);
+
+  // Handle clicks outside the search component
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false);
+        setSearchQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Toggle search input
   const toggleSearch = () => {
     setIsSearchOpen((prev) => !prev);
-    setTimeout(() => {
-      if (!isSearchOpen && searchInputRef.current) {
-        searchInputRef.current.focus();
-      }
-    }, 50);
-    if (isSearchOpen) setSearchResults([]);
+    if (!isSearchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearchQuery("");
+      setSearchResults([]);
+    }
   };
 
-  // Close search input when clicking outside
-  const handleBlur = () => {
-    setTimeout(() => {
-      setIsSearchOpen(false);
-      setSearchResults([]);
-    }, 200);
+  // Handle input change
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
   };
 
   // Handle search submission
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Searching for:", searchQuery);
+    // console.log("Searching for:", searchQuery);
   };
 
   return (
@@ -117,7 +137,7 @@ export default function Navbar() {
         }`}
       >
         <div className="px-4 md:px-16 py-4 flex items-center justify-between">
-          {/* Logo */}
+          {/* Left Section: Logo and Desktop Nav */}
           <div className="flex items-center">
             <Link
               to="/"
@@ -125,8 +145,6 @@ export default function Navbar() {
             >
               NETFLIX
             </Link>
-
-            {/* Desktop Navigation */}
             <div className="hidden md:flex ml-8 gap-6">
               <Link to="/" className="text-white hover:text-gray-300">
                 Home
@@ -146,11 +164,13 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Right Side Section */}
+          {/* Right Section: Search and Chevron */}
           <div className="flex items-center gap-4">
-            {/* Search Section */}
-            <div className="relative flex items-center">
-              {/* Search Button */}
+            {/* Search Component */}
+            <div
+              ref={searchContainerRef}
+              className="relative flex items-center md:mr-0 mr-10"
+            >
               <Button
                 variant="ghost"
                 size="icon"
@@ -163,12 +183,10 @@ export default function Navbar() {
                   <Search className="h-5 w-5" />
                 )}
               </Button>
-
-              {/* Search Input Field */}
               <form
                 onSubmit={handleSearch}
                 className={`overflow-hidden transition-all duration-300 ${
-                  isSearchOpen ? "w-48 md:w-64" : "w-0"
+                  isSearchOpen ? "w-32 sm:w-48 md:w-64" : "w-0"
                 } bg-black rounded-md flex items-center border border-gray-800`}
               >
                 <input
@@ -177,40 +195,61 @@ export default function Navbar() {
                   className="bg-transparent border-none outline-none text-white px-3 py-1 w-full"
                   placeholder="Search..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onBlur={handleBlur}
+                  onChange={handleInputChange}
                 />
               </form>
 
               {/* Search Results Dropdown */}
-              {isSearchOpen && searchResults.length > 0 && (
-                <div className="absolute top-12 right-0 w-64 md:w-80 bg-black/95 border border-gray-800 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
-                  {searchResults.map((anime) => (
-                    <Link
-                      key={anime.animeId}
-                      to={anime.href}
-                      className="flex items-center gap-3 p-2 hover:bg-gray-800 transition-colors"
-                      onClick={() => {
-                        setIsSearchOpen(false);
-                        setSearchResults([]);
-                      }}
-                    >
-                      <div className="w-12 h-18 bg-gray-700 rounded-md" />
-                      <span className="text-white text-sm truncate">
-                        {anime.title}
-                      </span>
-                    </Link>
-                  ))}
+              {isSearchOpen && searchQuery.trim() && (
+                <div className="absolute top-12 w-full bg-black/95 border border-gray-800 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                  {isLoading ? (
+                    <div className="p-4 text-center">
+                      <p className="text-white text-sm">Loading...</p>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((anime) => (
+                      <Link
+                        key={anime.animeId}
+                        to={`/anime/${anime.animeId}`}
+                        className="flex items-center gap-3 p-3 hover:bg-gray-800 transition-colors"
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          setSearchQuery("");
+                        }}
+                      >
+                        {anime.poster ? (
+                          <img
+                            src={anime.poster}
+                            alt={anime.title}
+                            className="w-12 h-16 object-cover rounded-md flex-shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                "/fallback-image.jpg";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-16 bg-gray-700 rounded-md flex-shrink-0" />
+                        )}
+                        <span className="text-white text-sm truncate">
+                          {anime.title}
+                        </span>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="p-3">
+                      <p className="text-white text-sm">
+                        No results found for "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Notification Button */}
-            <Button variant="ghost" size="icon" className="text-white">
+            {/* Commented Profile and Bell */}
+            {/* <Button variant="ghost" size="icon" className="text-white">
               <Bell className="h-5 w-5" />
             </Button>
-
-            {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -235,8 +274,24 @@ export default function Navbar() {
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> */}
           </div>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <div className="md:hidden absolute right-4 top-4 z-50">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <ChevronDown className="h-6 w-6" />
+            )}
+          </Button>
         </div>
 
         {/* Mobile Menu */}

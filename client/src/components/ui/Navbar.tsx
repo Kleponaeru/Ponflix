@@ -134,10 +134,10 @@ export default function Navbar() {
             <Link to="/" className="text-white hover:text-gray-300">
               Home
             </Link>
-            <Link to="/series" className="text-white hover:text-gray-300">
-              TV Shows
+            <Link to="/genre" className="text-white hover:text-gray-300">
+              Genre
             </Link>
-            <Link to="/movies" className="text-white hover:text-gray-300">
+            {/* <Link to="/movies" className="text-white hover:text-gray-300">
               Movies
             </Link>
             <Link to="/new" className="text-white hover:text-gray-300">
@@ -145,7 +145,7 @@ export default function Navbar() {
             </Link>
             <Link to="/mylist" className="text-white hover:text-gray-300">
               My List
-            </Link>
+            </Link> */}
           </div>
         </div>
 
@@ -251,10 +251,10 @@ export default function Navbar() {
             <Link to="/" className="text-white hover:text-gray-300">
               Home
             </Link>
-            <Link to="/series" className="text-white hover:text-gray-300">
-              TV Shows
+            <Link to="/genre" className="text-white hover:text-gray-300">
+              Genre
             </Link>
-            <Link to="/movies" className="text-white hover:text-gray-300">
+            {/* <Link to="/movies" className="text-white hover:text-gray-300">
               Movies
             </Link>
             <Link to="/new" className="text-white hover:text-gray-300">
@@ -262,7 +262,7 @@ export default function Navbar() {
             </Link>
             <Link to="/mylist" className="text-white hover:text-gray-300">
               My List
-            </Link>
+            </Link> */}
           </div>
         </div>
       )}

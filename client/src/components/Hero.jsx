@@ -1,14 +1,19 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { Play, Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Play, Info, Star, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DecryptedText from "./ui/DecryptedText";
 import Skeleton from "@mui/material/Skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Hero() {
-  const [featuredAnime, setFeaturedAnime] = useState(null); // Start as null for loading state
-  const [fade, setFade] = useState(true); // For fade transition effect
-  const apiBaseUrl = "http://localhost:3001"; // Your API URL
+  const [featuredAnime, setFeaturedAnime] = useState(null);
+  const [fade, setFade] = useState(true);
+  const [progressKey, setProgressKey] = useState(0); // Key to reset progress animation
+  const apiBaseUrl = "http://localhost:3001";
+
+  // Animation duration in seconds
+  const ANIMATION_DURATION = 8;
 
   // Map Indonesian days to English
   const daysName = {
@@ -33,27 +38,32 @@ export default function Hero() {
           const randomIndex = Math.floor(Math.random() * animeList.length);
           const anime = animeList[randomIndex];
           const englishReleaseDay =
-            daysName[anime.releaseDay] || anime.releaseDay; // Default to original if not found
+            daysName[anime.releaseDay] || anime.releaseDay;
           return {
+            id: anime.animeId,
             title: anime.title,
             poster: anime.poster,
+            episodes: anime.episodes,
+            releaseDay: englishReleaseDay,
+            latestReleaseDate: anime.latestReleaseDate,
             description: `Latest episode released on ${anime.latestReleaseDate}. A ${anime.episodes}-episode series airing every ${englishReleaseDay}.`,
           };
         };
 
         // Set initial random anime
         setFeaturedAnime(pickRandomAnime());
+        setProgressKey(1); // Start progress animation
 
-        // Change anime every 5 seconds with fade effect
+        // Change anime every 8 seconds with fade effect
         const interval = setInterval(() => {
           setFade(false); // Fade out
           setTimeout(() => {
             setFeaturedAnime(pickRandomAnime());
             setFade(true); // Fade in
-          }, 500); // Match this with the transition duration
-        }, 5000); // 5000ms = 5 seconds
+            setProgressKey((prev) => prev + 1); // Reset progress animation
+          }, 500);
+        }, ANIMATION_DURATION * 1000); // 8 seconds
 
-        // Cleanup interval on unmount
         return () => clearInterval(interval);
       } catch (error) {
         console.error("Error fetching anime data:", error);
@@ -61,6 +71,9 @@ export default function Hero() {
           title: "Error",
           poster: "/placeholder.svg?height=450&width=300",
           description: "Failed to load anime data.",
+          episodes: "?",
+          releaseDay: "Unknown",
+          latestReleaseDate: "Unknown",
         });
       }
     };
@@ -69,101 +82,364 @@ export default function Hero() {
   }, [apiBaseUrl]);
 
   return (
-    <div className="relative h-[40vw] md:h-[25vw] min-h-[400px] mt-10 md:mt-20 mb-10 md:mb-20 pt-20 pb-12 bg-black rounded-2xl overflow-hidden mx-4 md:mx-8">
-      {/* Transparent Overlay */}
-      <div className="absolute inset-0 bg-black/50 z-0" />
-      <div className="absolute inset-0 flex items-center justify-between px-4 md:px-16 z-10">
-        {/* Poster Image on the Left with Effects */}
-        <div className="w-[40%] md:w-1/4 h-auto flex justify-center">
-          {!featuredAnime ? (
-            <Skeleton
-              variant="rounded"
-              width={250}
-              height={400}
-              sx={{ bgcolor: "grey.800" }}
+    <div className="relative min-h-[400px] sm:min-h-[450px] md:min-h-[500px] mt-4 mb-8 overflow-hidden mx-2 sm:mx-4 rounded-xl sm:rounded-2xl">
+      {/* Background Image */}
+      <AnimatePresence>
+        {featuredAnime && (
+          <motion.div
+            key={featuredAnime.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-0"
+          >
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${featuredAnime.poster})`,
+                filter: "blur(20px)",
+                transform: "scale(1.1)",
+              }}
             />
-          ) : (
-            <img
-              src={featuredAnime.poster}
-              alt={featuredAnime.title}
-              className={`w-auto h-[50vw] max-h-[400px] object-cover rounded-2xl shadow-lg transition-all duration-500 transform ${
-                fade ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              }`}
-            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/90 to-transparent" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Layout - Only visible on small screens */}
+      <div className="md:hidden relative z-10 container mx-auto px-4 py-6 sm:py-8">
+        <div className="flex flex-col items-center text-white">
+          {/* Featured Badge */}
+          {featuredAnime && (
+            <div className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded-full mb-3 z-10">
+              FEATURED ANIME
+            </div>
           )}
-        </div>
-        {/* Content on the Right */}
-        <div className="w-2/3 md:w-3/4 pl-4 md:pl-8 flex flex-col justify-center h-full text-white text-shadow">
-          {!featuredAnime ? (
-            <>
+
+          {/* Poster Image */}
+          <div className="w-full flex justify-center mb-4">
+            {!featuredAnime ? (
               <Skeleton
-                variant="text"
-                width="60%"
-                height={50}
+                variant="rounded"
+                width={200}
+                height={300}
                 sx={{ bgcolor: "grey.800" }}
+                className="rounded-xl"
               />
-              <Skeleton
-                variant="text"
-                width="80%"
-                height={20}
-                className="mt-2"
-                sx={{ bgcolor: "grey.800" }}
-              />
-              <Skeleton
-                variant="text"
-                width="70%"
-                height={20}
-                className="mt-1"
-                sx={{ bgcolor: "grey.800" }}
-              />
-              <div className="flex gap-3 mt-4">
+            ) : (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative"
+              >
+                <img
+                  src={featuredAnime.poster || "/placeholder.svg"}
+                  alt={featuredAnime.title}
+                  className="w-auto h-[200px] sm:h-[250px] object-cover rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.7)]"
+                />
+              </motion.div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="w-full text-center px-2">
+            {!featuredAnime ? (
+              <>
                 <Skeleton
-                  variant="rounded"
-                  width={100}
-                  height={36}
-                  sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
+                  variant="text"
+                  width="100%"
+                  height={40}
+                  sx={{ bgcolor: "grey.800" }}
                 />
-                <Skeleton
-                  variant="rounded"
-                  width={120}
-                  height={36}
-                  sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold">
-                <DecryptedText
-                  text={featuredAnime.title}
-                  animateOn="view"
-                  revealDirection="center"
-                />
-              </h1>
-              <div className="max-w-[80%] md:max-w-[60%] lg:max-w-[50%] mt-2">
-                <p className="text-sm md:text-base lg:text-lg">
-                  <DecryptedText
-                    text={featuredAnime.description}
-                    animateOn="view"
-                    revealDirection="center"
+                <div className="flex justify-center gap-2 mt-3 mb-4">
+                  <Skeleton
+                    variant="rounded"
+                    width={80}
+                    height={24}
+                    sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
                   />
-                </p>
-              </div>
-              <div className="flex gap-3 mt-4">
-                <Button className="flex items-center gap-2 bg-white text-black hover:bg-white/90">
-                  <Play className="h-5 w-5" />
-                  <span>Play</span>
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="flex items-center gap-2 bg-gray-500/70 text-white hover:bg-gray-500/50"
+                  <Skeleton
+                    variant="rounded"
+                    width={80}
+                    height={24}
+                    sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
+                  />
+                </div>
+                <div className="flex justify-center gap-3 mt-4">
+                  <Skeleton
+                    variant="rounded"
+                    width={100}
+                    height={40}
+                    sx={{ bgcolor: "grey.800", borderRadius: "8px" }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    width={100}
+                    height={40}
+                    sx={{ bgcolor: "grey.800", borderRadius: "8px" }}
+                  />
+                </div>
+              </>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={featuredAnime.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
                 >
-                  <Info className="h-5 w-5" />
-                  <span>More Info</span>
-                </Button>
-              </div>
-            </>
-          )}
+                  {/* Title */}
+                  <h1 className="text-xl sm:text-2xl font-bold leading-tight">
+                    <DecryptedText
+                      text={featuredAnime.title}
+                      animateOn="view"
+                      revealDirection="center"
+                    />
+                  </h1>
+
+                  {/* Stats */}
+                  <div className="flex flex-wrap justify-center gap-3 mt-2 text-xs sm:text-sm text-gray-300">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
+                      <span>Airs on {featuredAnime.releaseDay}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
+                      <span>Latest: {featuredAnime.latestReleaseDate}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
+                      <span>{featuredAnime.episodes} Episodes</span>
+                    </div>
+                  </div>
+
+                  {/* Description - Hidden on smallest screens */}
+                  <div className="mt-2 hidden sm:block">
+                    <p className="text-sm text-gray-200">
+                      <DecryptedText
+                        text={featuredAnime.description}
+                        animateOn="view"
+                        revealDirection="center"
+                      />
+                    </p>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex justify-center gap-3 mt-4">
+                    <Button
+                      size="sm"
+                      className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 px-3 py-1 rounded-lg text-sm"
+                    >
+                      <Play className="h-3 w-3 sm:h-4 sm:w-4" fill="white" />
+                      <span className="font-medium">Watch</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-500 text-black hover:bg-white/10 flex items-center gap-1 px-3 py-1 rounded-lg text-sm"
+                    >
+                      <Info className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="font-medium">Info</span>
+                    </Button>
+                  </div>
+
+                  {/* Progress Indicator - Mobile */}
+                  <div className="mt-4 px-4">
+                    <div className="w-full h-1 rounded-full bg-gray-700 overflow-hidden">
+                      <motion.div
+                        key={`progress-mobile-${progressKey}`}
+                        className="h-full bg-red-600"
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{
+                          duration: ANIMATION_DURATION,
+                          ease: "linear",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout - Only visible on medium screens and up */}
+      <div className="hidden md:block relative z-10 container h-full mx-auto px-4 py-8">
+        <div className="flex items-center h-full">
+          {/* Left Side - Poster */}
+          <div className="w-1/3 flex justify-end pr-8">
+            {!featuredAnime ? (
+              <Skeleton
+                variant="rounded"
+                width={280}
+                height={400}
+                sx={{ bgcolor: "grey.800" }}
+                className="rounded-2xl"
+              />
+            ) : (
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="relative group"
+              >
+                <img
+                  src={featuredAnime.poster || "/placeholder.svg"}
+                  alt={featuredAnime.title}
+                  className="w-auto h-[400px] object-cover rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:shadow-[0_0_40px_rgba(255,0,0,0.3)]"
+                />
+                <div className="absolute inset-0 rounded-2xl ring-2 ring-red-500/0 group-hover:ring-red-500/50 transition-all duration-300" />
+              </motion.div>
+            )}
+          </div>
+
+          {/* Right Side - Content */}
+          <div className="w-2/3 flex flex-col justify-center text-white">
+            {!featuredAnime ? (
+              <>
+                <Skeleton
+                  variant="text"
+                  width="70%"
+                  height={60}
+                  sx={{ bgcolor: "grey.800" }}
+                />
+                <div className="flex gap-2 mt-3 mb-4">
+                  <Skeleton
+                    variant="rounded"
+                    width={80}
+                    height={24}
+                    sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    width={80}
+                    height={24}
+                    sx={{ bgcolor: "grey.800", borderRadius: "4px" }}
+                  />
+                </div>
+                <Skeleton
+                  variant="text"
+                  width="90%"
+                  height={24}
+                  className="mt-2"
+                  sx={{ bgcolor: "grey.800" }}
+                />
+                <Skeleton
+                  variant="text"
+                  width="80%"
+                  height={24}
+                  className="mt-1"
+                  sx={{ bgcolor: "grey.800" }}
+                />
+                <div className="flex gap-3 mt-6">
+                  <Skeleton
+                    variant="rounded"
+                    width={120}
+                    height={48}
+                    sx={{ bgcolor: "grey.800", borderRadius: "8px" }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    width={140}
+                    height={48}
+                    sx={{ bgcolor: "grey.800", borderRadius: "8px" }}
+                  />
+                </div>
+              </>
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={featuredAnime.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {/* Featured Badge */}
+                  <div className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded-full mb-3">
+                    FEATURED ANIME
+                  </div>
+
+                  {/* Title */}
+                  <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
+                    <DecryptedText
+                      text={featuredAnime.title}
+                      animateOn="view"
+                      revealDirection="center"
+                    />
+                  </h1>
+
+                  {/* Stats */}
+                  <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-300">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4 text-red-500" />
+                      <span>Airs on {featuredAnime.releaseDay}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4 text-red-500" />
+                      <span>Latest: {featuredAnime.latestReleaseDate}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span>{featuredAnime.episodes} Episodes</span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div className="mt-4 max-w-[600px]">
+                    <p className="text-base lg:text-lg text-gray-200">
+                      <DecryptedText
+                        text={featuredAnime.description}
+                        animateOn="view"
+                        revealDirection="center"
+                      />
+                    </p>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-4 mt-6">
+                    <Button
+                      size="lg"
+                      className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 px-6 py-6 rounded-xl transition-transform hover:scale-105"
+                    >
+                      <Play className="h-5 w-5" fill="white" />
+                      <span className="font-semibold">Watch Now</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-gray-500 text-black hover:bg-white/10 flex items-center gap-2 px-6 py-6 rounded-xl"
+                    >
+                      <Info className="h-5 w-5" />
+                      <span className="font-semibold">More Info</span>
+                    </Button>
+                  </div>
+
+                  {/* Progress Indicator - Desktop */}
+                  <div className="mt-8 max-w-md">
+                    <div className="w-full h-1 rounded-full bg-gray-700 overflow-hidden">
+                      <motion.div
+                        key={`progress-desktop-${progressKey}`}
+                        className="h-full bg-red-600"
+                        initial={{ width: "0%" }}
+                        animate={{ width: "100%" }}
+                        transition={{
+                          duration: ANIMATION_DURATION,
+                          ease: "linear",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </div>
         </div>
       </div>
     </div>

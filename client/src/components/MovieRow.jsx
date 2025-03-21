@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -98,66 +98,75 @@ export default function MovieRow({
     loadMoviesWithDetails();
   }, [initialMovies]);
 
-  // Check scroll state and update active dot
-  useEffect(() => {
-    const checkScroll = () => {
-      if (rowRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = rowRef.current;
-        setCanScrollLeft(scrollLeft > 0);
-        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
-
-        // Calculate which dot should be active based on scroll position
-        const isOngoingOrCompleted =
-          title === "Ongoing Anime" || title === "Completed Anime";
-        const dotCount = isOngoingOrCompleted ? 5 : 3;
-
-        const maxScroll = scrollWidth - clientWidth;
-        if (maxScroll <= 0) {
-          setActiveDot(0);
-          return;
-        }
-
-        const scrollRatio = scrollLeft / maxScroll;
-        const dotIndex = Math.min(
-          dotCount - 1,
-          Math.floor(scrollRatio * dotCount)
-        );
-        setActiveDot(dotIndex);
-      }
+  // Debounced scroll check to reduce event frequency
+  const debounce = (func, wait) => {
+    let timeout;
+    return (...args) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
     };
+  };
 
-    checkScroll();
+  const checkScroll = useCallback(() => {
+    if (rowRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = rowRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+
+      const isOngoingOrCompleted =
+        title === "Ongoing Anime" || title === "Completed Anime";
+      const dotCount = isOngoingOrCompleted ? 5 : 3;
+
+      const maxScroll = scrollWidth - clientWidth;
+      if (maxScroll <= 0) {
+        setActiveDot(0);
+        return;
+      }
+
+      const scrollRatio = scrollLeft / maxScroll;
+      const dotIndex = Math.min(
+        dotCount - 1,
+        Math.floor(scrollRatio * dotCount)
+      );
+      setActiveDot(dotIndex);
+    }
+  }, [title]);
+
+  useEffect(() => {
+    const debouncedCheckScroll = debounce(checkScroll, 100); // Debounce by 100ms
+    checkScroll(); // Initial check
 
     const currentRef = rowRef.current;
     if (currentRef) {
-      currentRef.addEventListener("scroll", checkScroll);
-      return () => currentRef.removeEventListener("scroll", checkScroll);
+      currentRef.addEventListener("scroll", debouncedCheckScroll);
+      return () =>
+        currentRef.removeEventListener("scroll", debouncedCheckScroll);
     }
-  }, [movies, title]);
+  }, [movies, checkScroll]);
 
-  // Smooth scroll animation with easing
-  const handleScroll = (direction) => {
-    if (rowRef.current) {
-      const { scrollLeft, clientWidth, scrollWidth } = rowRef.current;
-      const isOngoingOrCompleted =
-        title === "Ongoing Anime" || title === "Completed Anime";
-      const scrollAmount = clientWidth * (isOngoingOrCompleted ? 0.75 : 0.85);
+  // Smooth scroll with native behavior
+  const handleScroll = useCallback(
+    (direction) => {
+      if (rowRef.current) {
+        const { scrollLeft, clientWidth, scrollWidth } = rowRef.current;
+        const isOngoingOrCompleted =
+          title === "Ongoing Anime" || title === "Completed Anime";
+        const scrollAmount = clientWidth * (isOngoingOrCompleted ? 0.75 : 0.85);
 
-      // Calculate target scroll position
-      const targetScroll =
-        direction === "left"
-          ? Math.max(0, scrollLeft - scrollAmount)
-          : Math.min(scrollWidth - clientWidth, scrollLeft + scrollAmount);
+        const targetScroll =
+          direction === "left"
+            ? Math.max(0, scrollLeft - scrollAmount)
+            : Math.min(scrollWidth - clientWidth, scrollLeft + scrollAmount);
 
-      // Apply smooth scrolling using scrollTo with behavior: 'smooth'
-      rowRef.current.scrollTo({
-        left: targetScroll,
-        behavior: "smooth",
-      });
-    }
-  };
+        rowRef.current.scrollTo({
+          left: targetScroll,
+          behavior: "smooth",
+        });
+      }
+    },
+    [title]
+  );
 
-  // Get the appropriate link for "See All" button
   const getDetailLink = () => {
     if (title === "Ongoing Anime") return "/ongoing";
     if (title === "Completed Anime") return "/completed";
@@ -165,23 +174,26 @@ export default function MovieRow({
     return "#";
   };
 
-  // Navigate to Stream page
-  const handleStreamClick = (movieId, event) => {
-    if (event) {
-      event.stopPropagation();
-    }
-    navigate(`/stream/${movieId}`);
-  };
+  const handleStreamClick = useCallback(
+    (movieId, event) => {
+      if (event) {
+        event.stopPropagation();
+      }
+      navigate(`/stream/${movieId}`);
+    },
+    [navigate]
+  );
 
-  // Navigate to Anime Info page
-  const handleInfoClick = (movieId, event) => {
-    if (event) {
-      event.stopPropagation();
-    }
-    navigate(`/anime/${movieId}`);
-  };
+  const handleInfoClick = useCallback(
+    (movieId, event) => {
+      if (event) {
+        event.stopPropagation();
+      }
+      navigate(`/anime/${movieId}`);
+    },
+    [navigate]
+  );
 
-  // Get color classes based on accentColor prop
   const getColorClasses = () => {
     const colorMap = {
       red: {
@@ -224,7 +236,6 @@ export default function MovieRow({
     return colorMap[accentColor] || colorMap.red;
   };
 
-  // Get badge class based on title or status
   const getBadgeClass = (movie) => {
     if (title === "Completed Anime" || movie.status === "Completed")
       return "bg-green-600";
@@ -238,27 +249,21 @@ export default function MovieRow({
     title === "Ongoing Anime" || title === "Completed Anime";
   const dotCount = isOngoingOrCompleted ? 5 : 3;
 
-  // Animation variants
+  // Simplified animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
+      transition: { duration: 0.3 },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, scale: 0.9 },
+    hidden: { opacity: 0, scale: 0.95 },
     visible: {
       opacity: 1,
       scale: 1,
-      transition: {
-        type: "spring",
-        stiffness: 260,
-        damping: 20,
-      },
+      transition: { duration: 0.3 },
     },
   };
 
@@ -281,18 +286,17 @@ export default function MovieRow({
         </Link>
       </div>
 
-      <div className="relative group">
-        {/* Left scroll button */}
+      <div className="relative">
         <Button
           variant="outline"
           size="icon"
           className={`absolute top-0 bottom-0 left-0 z-40 m-auto h-9 w-9 
-            border border-gray-700 bg-black/70 backdrop-blur-sm transition-all duration-200
+            border border-gray-700 bg-black/70 backdrop-blur-sm transition-opacity duration-200
             ${colors.scrollButton}
             ${
               canScrollLeft
                 ? "opacity-80 hover:opacity-100"
-                : "opacity-0 cursor-default pointer-events-none"
+                : "opacity-0 pointer-events-none"
             }`}
           onClick={() => handleScroll("left")}
           disabled={!canScrollLeft}
@@ -300,14 +304,12 @@ export default function MovieRow({
           <ChevronLeft className={`h-5 w-5 ${colors.button}`} />
         </Button>
 
-        {/* Movie row */}
         <div
           ref={rowRef}
-          className="flex items-center space-x-4 overflow-x-scroll overflow-y-hidden scrollbar-hide pb-12"
+          className="flex items-center space-x-4 overflow-x-scroll overflow-y-hidden scrollbar-hide pb-12 will-change-scroll"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {loading ? (
-            // Loading skeletons
             Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={`skeleton-${index}`}
@@ -351,13 +353,12 @@ export default function MovieRow({
                 <motion.div
                   key={movie.id}
                   variants={itemVariants}
-                  className="flex-shrink-0 relative"
+                  className="flex-shrink-0 relative group"
                   style={{
                     width: "clamp(130px, 18vw, 220px)",
                     height: "clamp(225px, 27vw, 360px)",
                   }}
                 >
-                  {/* Movie poster */}
                   <div
                     className="w-full h-4/5 overflow-hidden rounded-lg bg-gray-800 relative cursor-pointer"
                     onClick={() => handleStreamClick(movie.id)}
@@ -365,20 +366,15 @@ export default function MovieRow({
                     <img
                       src={movie.imageUrl || "/placeholder.svg"}
                       alt={movie.title}
-                      className="object-cover w-full h-full transition-transform duration-500 hover:scale-110"
+                      className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 will-change-transform"
                       loading="lazy"
                     />
-
-                    {/* Rating badge */}
                     <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center">
                       <Star className="w-3 h-3 mr-1 fill-current" />
                       {movie.rating}
                     </div>
-
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-3">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                       <div className="flex flex-col gap-2">
-                        {/* Status badge */}
                         <div className="flex justify-between items-start">
                           <div
                             className={`${getBadgeClass(
@@ -394,18 +390,9 @@ export default function MovieRow({
                               : "ANIME"}
                           </div>
                         </div>
-
-                        {/* Title */}
                         <h3 className="text-white text-sm font-medium line-clamp-2">
                           {movie.title}
                         </h3>
-
-                        {/* Synopsis preview */}
-                        {/* <p className="text-gray-300 text-xs line-clamp-2 mb-1">
-                          {movie.synopsis}
-                        </p> */}
-
-                        {/* Action buttons */}
                         <div className="flex gap-2 mt-1">
                           <button
                             onClick={(e) => handleStreamClick(movie.id, e)}
@@ -428,25 +415,18 @@ export default function MovieRow({
                       </div>
                     </div>
                   </div>
-
-                  {/* Movie info below poster */}
                   <div
                     className="mt-2 px-1 cursor-pointer h-1/5 flex flex-col"
                     onClick={() => handleStreamClick(movie.id)}
                   >
                     <h3
-                      className={`text-sm font-medium text-white transition-colors hover:${colors.title.replace(
-                        "text-",
-                        ""
-                      )}`}
+                      className={`text-sm font-medium text-white transition-colors duration-300 group-hover:${colors.hover}`}
                       title={movie.title}
                     >
                       {movie.title.length > 25
                         ? `${movie.title.substring(0, 25)}...`
                         : movie.title}
                     </h3>
-
-                    {/* Movie metadata */}
                     <div className="flex flex-wrap justify-between items-center mt-1 w-full">
                       <div className="flex items-center text-xs text-gray-400">
                         <Calendar className="h-3 w-3 mr-1 text-gray-500" />
@@ -454,7 +434,6 @@ export default function MovieRow({
                         <span className="mx-1">•</span>
                         <span>{movie.episodes} Ep</span>
                       </div>
-
                       {movie.genre && (
                         <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300 mt-1 sm:mt-0">
                           {movie.genre}
@@ -472,17 +451,16 @@ export default function MovieRow({
           )}
         </div>
 
-        {/* Right scroll button */}
         <Button
           variant="outline"
           size="icon"
           className={`absolute top-0 bottom-0 right-0 z-40 m-auto h-9 w-9 
-            border border-gray-700 bg-black/70 backdrop-blur-sm transition-all duration-200
+            border border-gray-700 bg-black/70 backdrop-blur-sm transition-opacity duration-200
             ${colors.scrollButton}
             ${
               canScrollRight
                 ? "opacity-80 hover:opacity-100"
-                : "opacity-0 cursor-default pointer-events-none"
+                : "opacity-0 pointer-events-none"
             }`}
           onClick={() => handleScroll("right")}
           disabled={!canScrollRight}
@@ -491,7 +469,6 @@ export default function MovieRow({
         </Button>
       </div>
 
-      {/* Scroll indicator dots */}
       {!loading && movies.length > 5 && (
         <div className="flex justify-center gap-1 mt-2">
           {Array.from({ length: dotCount }).map((_, index) => (

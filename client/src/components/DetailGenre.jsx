@@ -30,7 +30,6 @@ export default function DetailGenre() {
   const apiBaseUrl = "http://localhost:3001";
   const itemsPerPage = 15;
 
-  // Format genre name for display (capitalize each word, replace hyphens with spaces)
   const formatGenreName = (name) => {
     return name
       .split("-")
@@ -44,7 +43,7 @@ export default function DetailGenre() {
       let currentPage = 1;
       let allAnime = [];
       let hasMore = true;
-      const MAX_PAGES = 5; // Limit to speed up loading
+      const MAX_PAGES = 5;
 
       try {
         while (hasMore && currentPage <= MAX_PAGES) {
@@ -57,10 +56,9 @@ export default function DetailGenre() {
             id: anime.animeId,
             title: anime.title,
             imageUrl: anime.poster,
-            status: Math.random() > 0.5 ? "Ongoing" : "Completed",
+            status: Math.random() > 0.5 ? "Ongoing" : "Completed", //fix this later
           }));
 
-          // Fetch details in parallel with fail-safe handling
           const animeWithDetails = await Promise.allSettled(
             animeList.map(async (anime) => {
               try {
@@ -68,6 +66,12 @@ export default function DetailGenre() {
                   `${apiBaseUrl}/otakudesu/anime/${anime.id}`
                 );
                 const detailData = await detailRes.json();
+
+                const yearMatch = detailData.data.aired
+                  ? detailData.data.aired.match(/\d{4}/)
+                  : null;
+                const year = yearMatch ? parseInt(yearMatch[0]) : null;
+
                 return {
                   ...anime,
                   episodes: detailData.data.episodes || "N/A",
@@ -77,6 +81,7 @@ export default function DetailGenre() {
                       ? detailData.data.genreList[0].title
                       : "Unknown",
                   genres: detailData.data.genreList || [],
+                  year: year,
                 };
               } catch (error) {
                 console.warn(`Failed to fetch details for ${anime.id}`);
@@ -86,12 +91,12 @@ export default function DetailGenre() {
                   rating: "N/A",
                   genre: "Unknown",
                   genres: [],
+                  year: null,
                 };
               }
             })
           );
 
-          // Only add successful results
           allAnime = [
             ...allAnime,
             ...animeWithDetails
@@ -119,7 +124,6 @@ export default function DetailGenre() {
     if (genreId) fetchAllData();
   }, [genreId]);
 
-  // Handle search
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredData(allAnimeData);
@@ -129,14 +133,11 @@ export default function DetailGenre() {
       );
       setFilteredData(filtered);
     }
-    setPage(1); // Reset to first page when search changes
+    setPage(1);
   }, [searchQuery, allAnimeData]);
 
-  // Update displayed anime whenever page changes or filtered data changes
   useEffect(() => {
     setLoading(true);
-
-    // Small delay to show loading animation
     const timer = setTimeout(() => {
       if (filteredData.length > 0) {
         const startIndex = (page - 1) * itemsPerPage;
@@ -167,18 +168,16 @@ export default function DetailGenre() {
     }
   };
 
-  const handleAnimeClick = (animeId) => {
-    navigate(`/anime/${animeId}`);
+  // Navigate to Stream page
+  const handleStreamClick = (animeId) => {
+    navigate(`/stream/${animeId}`);
   };
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
+      transition: { staggerChildren: 0.05 },
     },
   };
 
@@ -187,15 +186,10 @@ export default function DetailGenre() {
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 260,
-        damping: 20,
-      },
+      transition: { type: "spring", stiffness: 260, damping: 20 },
     },
   };
 
-  // Get a consistent color for the genre
   const getGenreColor = (genreId) => {
     const colors = {
       action: "from-orange-900 to-red-900",
@@ -211,8 +205,6 @@ export default function DetailGenre() {
       supernatural: "from-violet-900 to-purple-900",
       thriller: "from-red-900 to-rose-900",
     };
-
-    // Default color if genre not found
     return colors[genreId.toLowerCase()] || "from-gray-900 to-slate-800";
   };
 
@@ -220,7 +212,6 @@ export default function DetailGenre() {
     <>
       <Navbar />
       <main className="min-h-screen bg-black text-white pt-16 px-4 md:px-12 pb-12">
-        {/* Hero Section */}
         <div className="relative w-full h-[150px] md:h-[200px] mb-8 overflow-hidden rounded-xl">
           <div
             className={`absolute inset-0 bg-gradient-to-r ${getGenreColor(
@@ -240,7 +231,6 @@ export default function DetailGenre() {
           </div>
         </div>
 
-        {/* Breadcrumbs and Search */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <nav className="text-sm md:text-base font-medium flex items-center gap-2">
             <Link
@@ -260,7 +250,6 @@ export default function DetailGenre() {
             <span className="text-white">{formatGenreName(genreId)}</span>
           </nav>
 
-          {/* Search Bar */}
           <div className="relative w-full md:w-auto md:min-w-[300px]">
             <input
               type="text"
@@ -281,7 +270,6 @@ export default function DetailGenre() {
           </div>
         </div>
 
-        {/* Results Count */}
         {!initialLoading && (
           <div className="flex justify-between items-center mb-6">
             <p className="text-sm text-gray-400">
@@ -290,12 +278,6 @@ export default function DetailGenre() {
               {Math.min(page * itemsPerPage, filteredData.length)} of{" "}
               {filteredData.length} anime
             </p>
-            {/* <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="text-xs">
-                <Filter className="h-3 w-3 mr-1 text-black" />
-                <span className="text-black">Filter</span>
-              </Button>
-            </div> */}
           </div>
         )}
 
@@ -343,7 +325,7 @@ export default function DetailGenre() {
                     <motion.div
                       key={anime.id}
                       variants={itemVariants}
-                      onClick={() => handleAnimeClick(anime.id)}
+                      onClick={() => handleStreamClick(anime.id)}
                       className="group flex flex-col cursor-pointer"
                     >
                       <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg mb-2 bg-gray-800">
@@ -370,7 +352,6 @@ export default function DetailGenre() {
                           </div>
                         </div>
 
-                        {/* Rating Badge */}
                         <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center">
                           <svg
                             className="w-3 h-3 mr-1 fill-current"
@@ -386,7 +367,7 @@ export default function DetailGenre() {
                       </h3>
                       <div className="flex justify-between items-center mt-1">
                         <p className="text-xs text-gray-400">
-                          {anime.episodes} Episodes
+                          {anime.episodes} Episodes - {anime.year}
                         </p>
                         <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300">
                           {anime.genre}
@@ -419,7 +400,6 @@ export default function DetailGenre() {
 
                 <div className="flex items-center gap-2">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    // Logic to show pages around current page
                     let pageNum;
                     if (totalPages <= 5) {
                       pageNum = i + 1;

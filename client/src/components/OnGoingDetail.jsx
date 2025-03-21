@@ -30,8 +30,6 @@ export default function OngoingDetail() {
   const apiBaseUrl = "http://localhost:3001";
   const itemsPerPage = 15;
 
-  // Fetch all data on component mount
-  // Replace the existing data fetching code in useEffect with this:
   useEffect(() => {
     const fetchAllData = async () => {
       setInitialLoading(true);
@@ -46,7 +44,6 @@ export default function OngoingDetail() {
           );
           const data = await res.json();
 
-          // For each anime in the list, fetch its details to get genre
           const animeWithDetails = await Promise.all(
             data.data.animeList.map(async (anime) => {
               try {
@@ -55,7 +52,11 @@ export default function OngoingDetail() {
                 );
                 const detailData = await detailRes.json();
 
-                // Extract rating from the details API
+                const yearMatch = detailData.data.aired
+                  ? detailData.data.aired.match(/\d{4}/)
+                  : null;
+                const year = yearMatch ? parseInt(yearMatch[0]) : null;
+
                 const rating = detailData.data.score || "N/A";
 
                 const genre =
@@ -69,7 +70,8 @@ export default function OngoingDetail() {
                   title: anime.title,
                   imageUrl: anime.poster,
                   episodes: anime.episodes,
-                  rating: rating, // Updated to use detailData.data.score
+                  year: year,
+                  rating: rating,
                   releaseDay: anime.releaseDay,
                   latestEpisode: anime.latestEpisode,
                   latestReleaseDate: anime.latestReleaseDate,
@@ -87,6 +89,7 @@ export default function OngoingDetail() {
                   imageUrl: anime.poster,
                   episodes: anime.episodes,
                   rating: "N/A",
+                  year: null,
                   releaseDay: anime.releaseDay,
                   latestEpisode: anime.latestEpisode,
                   latestReleaseDate: anime.latestReleaseDate,
@@ -124,7 +127,6 @@ export default function OngoingDetail() {
     fetchAllData();
   }, []);
 
-  // Handle search
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredData(allAnimeData);
@@ -134,10 +136,9 @@ export default function OngoingDetail() {
       );
       setFilteredData(filtered);
     }
-    setPage(1); // Reset to first page when search changes
+    setPage(1);
   }, [searchQuery, allAnimeData]);
 
-  // Handle sorting
   useEffect(() => {
     const sorted = [...filteredData];
 
@@ -152,25 +153,21 @@ export default function OngoingDetail() {
         sorted.sort((a, b) => b.episodes - a.episodes);
         break;
       case "latest-desc":
-        sorted.sort((a, b) => {
-          // Sort by latest episode date (assuming format is consistent)
-          return new Date(b.latestReleaseDate) - new Date(a.latestReleaseDate);
-        });
+        sorted.sort(
+          (a, b) =>
+            new Date(b.latestReleaseDate) - new Date(a.latestReleaseDate)
+        );
         break;
       default:
-        // Keep default order
         break;
     }
 
     setFilteredData(sorted);
-    setPage(1); // Reset to first page when sort changes
+    setPage(1);
   }, [sortOption]);
 
-  // Update displayed anime whenever page changes or filtered data changes
   useEffect(() => {
     setLoading(true);
-
-    // Small delay to show loading animation
     const timer = setTimeout(() => {
       if (filteredData.length > 0) {
         const startIndex = (page - 1) * itemsPerPage;
@@ -201,18 +198,16 @@ export default function OngoingDetail() {
     }
   };
 
-  const handleAnimeClick = (animeId) => {
-    navigate(`/anime/${animeId}`);
+  // Navigate to Stream page
+  const handleStreamClick = (animeId) => {
+    navigate(`/stream/${animeId}`);
   };
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
+      transition: { staggerChildren: 0.05 },
     },
   };
 
@@ -221,11 +216,7 @@ export default function OngoingDetail() {
     visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 260,
-        damping: 20,
-      },
+      transition: { type: "spring", stiffness: 260, damping: 20 },
     },
   };
 
@@ -233,7 +224,6 @@ export default function OngoingDetail() {
     <>
       <Navbar />
       <main className="min-h-screen bg-black text-white pt-16 px-4 md:px-12 pb-12">
-        {/* Hero Section */}
         <div className="relative w-full h-[150px] md:h-[200px] mb-8 overflow-hidden rounded-xl">
           <div className="absolute inset-0 bg-gradient-to-r from-red-900 to-orange-900 opacity-80"></div>
           <div className="absolute inset-0 bg-[url('/placeholder.svg')] bg-cover bg-center mix-blend-overlay opacity-30"></div>
@@ -249,7 +239,6 @@ export default function OngoingDetail() {
           </div>
         </div>
 
-        {/* Filters and Search */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <nav className="text-sm md:text-base font-medium flex items-center gap-2">
             <Link
@@ -263,7 +252,6 @@ export default function OngoingDetail() {
           </nav>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* Sort Dropdown */}
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
@@ -276,7 +264,6 @@ export default function OngoingDetail() {
               <option value="latest-desc">Recently Updated</option>
             </select>
 
-            {/* Search Bar */}
             <div className="relative w-full sm:w-auto sm:min-w-[300px]">
               <input
                 type="text"
@@ -298,7 +285,6 @@ export default function OngoingDetail() {
           </div>
         </div>
 
-        {/* Results Count */}
         {!initialLoading && (
           <div className="flex justify-between items-center mb-6">
             <p className="text-sm text-gray-400">
@@ -307,12 +293,6 @@ export default function OngoingDetail() {
               {Math.min(page * itemsPerPage, filteredData.length)} of{" "}
               {filteredData.length} anime
             </p>
-            {/* <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="text-xs">
-                <Filter className="h-3 w-3 mr-1 text-black" />
-                <span className="text-black">Filter</span>
-              </Button>
-            </div> */}
           </div>
         )}
 
@@ -360,7 +340,7 @@ export default function OngoingDetail() {
                     <motion.div
                       key={anime.id}
                       variants={itemVariants}
-                      onClick={() => handleAnimeClick(anime.id)}
+                      onClick={() => handleStreamClick(anime.id)}
                       className="group flex flex-col cursor-pointer"
                     >
                       <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg mb-2 bg-gray-800">
@@ -381,7 +361,6 @@ export default function OngoingDetail() {
                           </div>
                         </div>
 
-                        {/* Rating Badge */}
                         <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center">
                           <svg
                             className="w-3 h-3 mr-1 fill-current"
@@ -397,7 +376,7 @@ export default function OngoingDetail() {
                       </h3>
                       <div className="flex justify-between items-center mt-1">
                         <p className="text-xs text-gray-400">
-                          {anime.episodes} Episodes
+                          {anime.episodes} Episodes - {anime.year}
                         </p>
                         <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300">
                           {anime.genre}
@@ -430,7 +409,6 @@ export default function OngoingDetail() {
 
                 <div className="flex items-center gap-2">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    // Logic to show pages around current page
                     let pageNum;
                     if (totalPages <= 5) {
                       pageNum = i + 1;
@@ -468,7 +446,7 @@ export default function OngoingDetail() {
                   size="icon"
                   onClick={handleNextPage}
                   disabled={page === totalPages}
-                  className="border-gray-700 hover:bg-gray-800 hover:text-red-500 text-black-500"
+                  className="border-gray-700 hover:bg-gray-800 hover:text-red-500 text-red-500"
                 >
                   <ChevronRight className="h-5 w-5 text-red-500" />
                 </Button>

@@ -6,9 +6,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Filter,
   Loader2,
   Tag,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "./ui/Navbar";
@@ -23,6 +23,7 @@ export default function DetailGenre() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const navigate = useNavigate();
@@ -37,16 +38,81 @@ export default function DetailGenre() {
       .join(" ");
   };
 
+  // Fetch anime details in parallel
+  const fetchAnimeDetails = async (animeList) => {
+    const animeWithDetails = await Promise.all(
+      animeList.map(async (anime) => {
+        try {
+          const detailRes = await fetch(
+            `${apiBaseUrl}/otakudesu/anime/${anime.id}`
+          );
+          const detailData = await detailRes.json();
+
+          const yearMatch = detailData.data.aired
+            ? detailData.data.aired.match(/\d{4}/)
+            : null;
+          const year = yearMatch ? parseInt(yearMatch[0]) : null;
+
+          return {
+            ...anime,
+            episodes: detailData.data.episodes || "N/A",
+            rating: detailData.data.score || "N/A",
+            status: detailData.data.status || anime.status || "Unknown",
+            genre:
+              detailData.data.genreList?.length > 0
+                ? detailData.data.genreList[0].title
+                : "Unknown",
+            genres: detailData.data.genreList || [],
+            year: year,
+          };
+        } catch (error) {
+          console.warn(`Failed to fetch details for ${anime.id}`);
+          return {
+            ...anime,
+            episodes: "N/A",
+            status: anime.status || "Unknown",
+            rating: "N/A",
+            genre: "Unknown",
+            genres: [],
+            year: null,
+          };
+        }
+      })
+    );
+    return animeWithDetails;
+  };
+
   useEffect(() => {
     const fetchAllData = async () => {
       setInitialLoading(true);
-      let currentPage = 1;
       let allAnime = [];
-      let hasMore = true;
-      const MAX_PAGES = 5;
 
       try {
-        while (hasMore && currentPage <= MAX_PAGES) {
+        // Fetch and display the first page immediately
+        const firstPageRes = await fetch(
+          `${apiBaseUrl}/otakudesu/genres/${genreId}?page=1`
+        );
+        const firstPageData = await firstPageRes.json();
+
+        const firstPageAnime = firstPageData.data.animeList.map((anime) => ({
+          id: anime.animeId,
+          title: anime.title,
+          imageUrl: anime.poster,
+        }));
+
+        const firstPageWithDetails = await fetchAnimeDetails(firstPageAnime);
+        allAnime = [...firstPageWithDetails];
+        setAllAnimeData(allAnime);
+        setFilteredData(allAnime);
+        setTotalPages(Math.ceil(allAnime.length / itemsPerPage));
+        setInitialLoading(false);
+
+        // Fetch remaining pages in the background
+        setBackgroundLoading(true);
+        let currentPage = 2;
+        let hasMore = firstPageAnime.length === itemsPerPage;
+
+        while (hasMore) {
           const res = await fetch(
             `${apiBaseUrl}/otakudesu/genres/${genreId}?page=${currentPage}`
           );
@@ -56,68 +122,42 @@ export default function DetailGenre() {
             id: anime.animeId,
             title: anime.title,
             imageUrl: anime.poster,
-            status: Math.random() > 0.5 ? "Ongoing" : "Completed", //fix this later
           }));
 
-          const animeWithDetails = await Promise.allSettled(
-            animeList.map(async (anime) => {
-              try {
-                const detailRes = await fetch(
-                  `${apiBaseUrl}/otakudesu/anime/${anime.id}`
-                );
-                const detailData = await detailRes.json();
-
-                const yearMatch = detailData.data.aired
-                  ? detailData.data.aired.match(/\d{4}/)
-                  : null;
-                const year = yearMatch ? parseInt(yearMatch[0]) : null;
-
-                return {
-                  ...anime,
-                  episodes: detailData.data.episodes || "N/A",
-                  rating: detailData.data.score || "N/A",
-                  genre:
-                    detailData.data.genreList?.length > 0
-                      ? detailData.data.genreList[0].title
-                      : "Unknown",
-                  genres: detailData.data.genreList || [],
-                  year: year,
-                };
-              } catch (error) {
-                console.warn(`Failed to fetch details for ${anime.id}`);
-                return {
-                  ...anime,
-                  episodes: "N/A",
-                  rating: "N/A",
-                  genre: "Unknown",
-                  genres: [],
-                  year: null,
-                };
-              }
-            })
-          );
-
-          allAnime = [
-            ...allAnime,
-            ...animeWithDetails
-              .filter((result) => result.status === "fulfilled")
-              .map((result) => result.value),
-          ];
+          const animeWithDetails = await fetchAnimeDetails(animeList);
+          allAnime = [...allAnime, ...animeWithDetails];
 
           hasMore = animeList.length === itemsPerPage;
           currentPage++;
-        }
 
-        setAllAnimeData(allAnime);
-        setFilteredData(allAnime);
-        setTotalPages(Math.ceil(allAnime.length / itemsPerPage));
+          // Update state incrementally
+          setAllAnimeData([...allAnime]);
+          setFilteredData([...allAnime]);
+          setTotalPages(Math.ceil(allAnime.length / itemsPerPage));
+
+          console.log(
+            `Fetched page ${
+              currentPage - 1
+            } for genre ${genreId}. Total anime: ${allAnime.length}`
+          );
+
+          // Safety limit
+          if (currentPage > 100) {
+            console.warn(
+              `Reached page limit of 100 for genre ${genreId}. Stopping fetch.`
+            );
+            break;
+          }
+        }
       } catch (error) {
-        console.error(`Error fetching all anime for genre ${genreId}:`, error);
-        setAllAnimeData([]);
-        setFilteredData([]);
-        setTotalPages(0);
+        console.error(`Error fetching anime for genre ${genreId}:`, error);
+        if (!allAnime.length) {
+          setAllAnimeData([]);
+          setFilteredData([]);
+          setTotalPages(0);
+        }
       } finally {
-        setInitialLoading(false);
+        setBackgroundLoading(false);
       }
     };
 
@@ -168,7 +208,6 @@ export default function DetailGenre() {
     }
   };
 
-  // Navigate to Stream page
   const handleStreamClick = (animeId) => {
     navigate(`/stream/${animeId}`);
   };
@@ -277,6 +316,7 @@ export default function DetailGenre() {
               {filteredData.length > 0 ? (page - 1) * itemsPerPage + 1 : 0} -{" "}
               {Math.min(page * itemsPerPage, filteredData.length)} of{" "}
               {filteredData.length} anime
+              {backgroundLoading && " (Loading more in background...)"}
             </p>
           </div>
         )}
@@ -365,13 +405,19 @@ export default function DetailGenre() {
                       <h3 className="text-sm font-medium text-white line-clamp-1 group-hover:text-red-500 transition-colors">
                         {anime.title}
                       </h3>
-                      <div className="flex justify-between items-center mt-1">
-                        <p className="text-xs text-gray-400">
-                          {anime.episodes} Episodes - {anime.year}
-                        </p>
-                        <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300">
-                          {anime.genre}
-                        </span>
+                      <div className="flex flex-wrap justify-between items-center mt-1 w-full">
+                        <div className="flex items-center text-xs text-gray-400">
+                          <Calendar className="h-3 w-3 mr-1 text-gray-500" />
+                          <span>{anime.year}</span>
+                          <span className="mx-1">•</span>
+                          <span>{anime.episodes} Ep</span>
+                        </div>
+
+                        {anime.genre && (
+                          <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300 mt-1 sm:mt-0">
+                            {anime.genre}
+                          </span>
+                        )}
                       </div>
                     </motion.div>
                   ))

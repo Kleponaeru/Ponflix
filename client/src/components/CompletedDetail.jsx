@@ -8,6 +8,7 @@ import {
   Filter,
   Loader2,
   CheckCircle,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -363,11 +364,19 @@ export default function CompletedDetail() {
                       <h3 className="text-sm font-medium text-white line-clamp-1 group-hover:text-red-500 transition-colors">
                         {anime.title}
                       </h3>
-                      <div className="flex justify-between items-center mt-1">
-                        <p className="text-xs text-gray-400">{anime.episodes} Episodes - {anime.year}</p>
-                        <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300">
-                          {anime.genre}
-                        </span>
+                      <div className="flex flex-wrap justify-between items-center mt-1 w-full">
+                        <div className="flex items-center text-xs text-gray-400">
+                          <Calendar className="h-3 w-3 mr-1 text-gray-500" />
+                          <span>{anime.year}</span>
+                          <span className="mx-1">•</span>
+                          <span>{anime.episodes} Ep</span>
+                        </div>
+
+                        {anime.genre && (
+                          <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300 mt-1 sm:mt-0">
+                            {anime.genre}
+                          </span>
+                        )}
                       </div>
                     </motion.div>
                   ))

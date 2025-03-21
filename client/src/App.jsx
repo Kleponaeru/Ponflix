@@ -8,6 +8,7 @@ import OngoingDetail from "./components/OnGoingDetail";
 import CompletedDetail from "./components/CompletedDetail";
 import Skeleton from "@mui/material/Skeleton";
 import Stream from "./components/pages/Stream";
+import Genres from "./components/pages/Genres";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -128,7 +129,8 @@ export default function App() {
       <Route path="/genres/:genreId" element={<DetailGenre />} />
       <Route path="/ongoing" element={<OngoingDetail />} />
       <Route path="/completed" element={<CompletedDetail />} />
-      <Route path="/stream/:animeId" element={<Stream />} /> {/* Add Stream route */}
+      <Route path="/stream/:animeId" element={<Stream />} />
+      <Route path="/genres" element={<Genres />} />
     </Routes>
   );
 }

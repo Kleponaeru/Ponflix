@@ -384,7 +384,13 @@ export default function DetailGenre() {
                                   : "bg-green-600"
                               } text-white text-xs font-medium px-2 py-1 rounded-sm inline-block mb-2`}
                             >
-                              {anime.status}
+                              {anime.status === "Completed"
+                                ? "COMPLETED"
+                                : anime.status === "Ongoing"
+                                ? "ONGOING"
+                                : genreId
+                                ? genreId.toUpperCase()
+                                : "ANIME"}
                             </div>
                             <p className="text-white text-sm font-medium line-clamp-2">
                               {anime.title}

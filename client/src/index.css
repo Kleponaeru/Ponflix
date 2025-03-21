@@ -89,3 +89,6 @@ html::-webkit-scrollbar-thumb {
 html::-webkit-scrollbar-thumb:hover {
   background: #555; /* Lighter gray on hover */
 }
+/* main > *:last-child {
+  margin-bottom: 0 !important;
+} */

@@ -8,6 +8,7 @@ import {
   Info,
   Star,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
@@ -446,7 +447,7 @@ export default function MovieRow({
             </motion.div>
           ) : (
             <div className="flex items-center justify-center w-full py-10">
-              <p className="text-gray-400 text-sm">No anime available</p>
+              <Loader2 className="h-10 w-10 animate-spin text-red-500" />
             </div>
           )}
         </div>

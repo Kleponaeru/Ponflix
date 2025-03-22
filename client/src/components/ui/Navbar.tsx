@@ -128,7 +128,7 @@ export default function Navbar() {
       <div className="px-4 md:px-16 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="text-red-600 font-bold text-2xl md:text-3xl">
-            <img src="/ponflix-20-03-2025.png" alt="" height={80} width={80}/>
+            <img src="/ponflix-logo.png" alt="" height={80} width={80}/>
             {/* PONFLIX */}
           </Link>
           <div className="hidden md:flex ml-8 gap-6">

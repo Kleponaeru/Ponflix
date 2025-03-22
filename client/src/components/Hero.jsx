@@ -5,17 +5,17 @@ import { Button } from "@/components/ui/button";
 import DecryptedText from "./ui/DecryptedText";
 import Skeleton from "@mui/material/Skeleton";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom"; // Add this import
 
 export default function Hero() {
   const [featuredAnime, setFeaturedAnime] = useState(null);
   const [fade, setFade] = useState(true);
-  const [progressKey, setProgressKey] = useState(0); // Key to reset progress animation
+  const [progressKey, setProgressKey] = useState(0);
   const apiBaseUrl = "http://localhost:3001";
+  const navigate = useNavigate(); // Add this hook
 
-  // Animation duration in seconds
   const ANIMATION_DURATION = 8;
 
-  // Map Indonesian days to English
   const daysName = {
     Senin: "Monday",
     Selasa: "Tuesday",
@@ -33,7 +33,6 @@ export default function Hero() {
         const data = await response.json();
         const animeList = data.data.animeList;
 
-        // Function to pick a random anime
         const pickRandomAnime = () => {
           const randomIndex = Math.floor(Math.random() * animeList.length);
           const anime = animeList[randomIndex];
@@ -50,19 +49,17 @@ export default function Hero() {
           };
         };
 
-        // Set initial random anime
         setFeaturedAnime(pickRandomAnime());
-        setProgressKey(1); // Start progress animation
+        setProgressKey(1);
 
-        // Change anime every 8 seconds with fade effect
         const interval = setInterval(() => {
-          setFade(false); // Fade out
+          setFade(false);
           setTimeout(() => {
             setFeaturedAnime(pickRandomAnime());
-            setFade(true); // Fade in
-            setProgressKey((prev) => prev + 1); // Reset progress animation
+            setFade(true);
+            setProgressKey((prev) => prev + 1);
           }, 500);
-        }, ANIMATION_DURATION * 1000); // 8 seconds
+        }, ANIMATION_DURATION * 1000);
 
         return () => clearInterval(interval);
       } catch (error) {
@@ -80,6 +77,13 @@ export default function Hero() {
 
     fetchAnimeData();
   }, [apiBaseUrl]);
+
+  // Navigate to Stream page with the featured anime's ID
+  const handleStreamClick = () => {
+    if (featuredAnime && featuredAnime.id) {
+      navigate(`/stream/${featuredAnime.id}`);
+    }
+  };
 
   return (
     <div className="relative min-h-[400px] sm:min-h-[450px] md:min-h-[500px] mt-4 mb-8 overflow-hidden mx-2 sm:mx-4 rounded-xl sm:rounded-2xl">
@@ -108,17 +112,15 @@ export default function Hero() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Layout - Only visible on small screens */}
+      {/* Mobile Layout */}
       <div className="md:hidden relative z-10 container mx-auto px-4 py-6 sm:py-8">
         <div className="flex flex-col items-center text-white">
-          {/* Featured Badge */}
           {featuredAnime && (
             <div className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded-full mb-3 z-10">
               FEATURED ANIME
             </div>
           )}
 
-          {/* Poster Image */}
           <div className="w-full flex justify-center mb-4">
             {!featuredAnime ? (
               <Skeleton
@@ -144,7 +146,6 @@ export default function Hero() {
             )}
           </div>
 
-          {/* Content */}
           <div className="w-full text-center px-2">
             {!featuredAnime ? (
               <>
@@ -192,7 +193,6 @@ export default function Hero() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.5 }}
                 >
-                  {/* Title */}
                   <h1 className="text-xl sm:text-2xl font-bold leading-tight">
                     <DecryptedText
                       text={featuredAnime.title}
@@ -201,7 +201,6 @@ export default function Hero() {
                     />
                   </h1>
 
-                  {/* Stats */}
                   <div className="flex flex-wrap justify-center gap-3 mt-2 text-xs sm:text-sm text-gray-300">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
@@ -217,7 +216,6 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  {/* Description - Hidden on smallest screens */}
                   <div className="mt-2 hidden sm:block">
                     <p className="text-sm text-gray-200">
                       <DecryptedText
@@ -228,10 +226,10 @@ export default function Hero() {
                     </p>
                   </div>
 
-                  {/* Buttons */}
                   <div className="flex justify-center gap-3 mt-4">
                     <Button
                       size="sm"
+                      onClick={handleStreamClick} // Add onClick handler
                       className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-1 px-3 py-1 rounded-lg text-sm"
                     >
                       <Play className="h-3 w-3 sm:h-4 sm:w-4" fill="white" />
@@ -247,7 +245,6 @@ export default function Hero() {
                     </Button>
                   </div>
 
-                  {/* Progress Indicator - Mobile */}
                   <div className="mt-4 px-4">
                     <div className="w-full h-1 rounded-full bg-gray-700 overflow-hidden">
                       <motion.div
@@ -269,10 +266,9 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Desktop Layout - Only visible on medium screens and up */}
+      {/* Desktop Layout */}
       <div className="hidden md:block relative z-10 container h-full mx-auto px-4 py-8">
         <div className="flex items-center h-full">
-          {/* Left Side - Poster */}
           <div className="w-1/3 flex justify-end pr-8">
             {!featuredAnime ? (
               <Skeleton
@@ -299,7 +295,6 @@ export default function Hero() {
             )}
           </div>
 
-          {/* Right Side - Content */}
           <div className="w-2/3 flex flex-col justify-center text-white">
             {!featuredAnime ? (
               <>
@@ -361,12 +356,10 @@ export default function Hero() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.5 }}
                 >
-                  {/* Featured Badge */}
                   <div className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded-full mb-3">
                     FEATURED ANIME
                   </div>
 
-                  {/* Title */}
                   <h1 className="text-4xl lg:text-5xl font-bold leading-tight">
                     <DecryptedText
                       text={featuredAnime.title}
@@ -375,7 +368,6 @@ export default function Hero() {
                     />
                   </h1>
 
-                  {/* Stats */}
                   <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-300">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 text-red-500" />
@@ -391,7 +383,6 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  {/* Description */}
                   <div className="mt-4 max-w-[600px]">
                     <p className="text-base lg:text-lg text-gray-200">
                       <DecryptedText
@@ -402,10 +393,10 @@ export default function Hero() {
                     </p>
                   </div>
 
-                  {/* Buttons */}
                   <div className="flex gap-4 mt-6">
                     <Button
                       size="lg"
+                      onClick={handleStreamClick} // Add onClick handler
                       className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 px-6 py-6 rounded-xl transition-transform hover:scale-105"
                     >
                       <Play className="h-5 w-5" fill="white" />
@@ -421,7 +412,6 @@ export default function Hero() {
                     </Button>
                   </div>
 
-                  {/* Progress Indicator - Desktop */}
                   <div className="mt-8 max-w-md">
                     <div className="w-full h-1 rounded-full bg-gray-700 overflow-hidden">
                       <motion.div

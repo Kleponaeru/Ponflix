@@ -8,6 +8,7 @@ import OngoingDetail from "./components/OnGoingDetail";
 import CompletedDetail from "./components/CompletedDetail";
 import Skeleton from "@mui/material/Skeleton";
 import Stream from "./components/pages/Stream";
+import Genres from "./components/pages/Genres";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -86,7 +87,19 @@ export default function App() {
             <Navbar />
             <Hero />
             <div className="relative z-10 pb-10">
-              {categories.length > 0 ? (
+              {/* Show Skeleton Immediately */}
+              {categories.length === 0 &&
+                [...Array(3)].map((_, index) => (
+                  <MovieRow
+                    key={index}
+                    title="Loading..."
+                    movies={[]}
+                    genreId=""
+                  />
+                ))}
+
+              {/* Replace Skeleton with Real Data Once categories Load */}
+              {categories.length > 0 &&
                 categories.map((category) => (
                   <MovieRow
                     key={category.title}
@@ -94,33 +107,7 @@ export default function App() {
                     movies={category.movies}
                     genreId={category.genreId}
                   />
-                ))
-              ) : (
-                <div className="space-y-8 px-4 md:px-12">
-                  {/* Skeleton for 3 rows */}
-                  {[...Array(3)].map((_, index) => (
-                    <div key={index} className="space-y-2">
-                      <Skeleton
-                        variant="text"
-                        width="20%"
-                        height={40}
-                        sx={{ bgcolor: "grey.800" }}
-                      />
-                      <div className="flex space-x-2">
-                        {[...Array(10)].map((_, i) => (
-                          <Skeleton
-                            key={i}
-                            variant="rounded"
-                            width={160}
-                            height={240}
-                            sx={{ bgcolor: "grey.800", borderRadius: "8px" }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                ))}
             </div>
           </main>
         }
@@ -128,7 +115,8 @@ export default function App() {
       <Route path="/genres/:genreId" element={<DetailGenre />} />
       <Route path="/ongoing" element={<OngoingDetail />} />
       <Route path="/completed" element={<CompletedDetail />} />
-      <Route path="/stream/:animeId" element={<Stream />} /> {/* Add Stream route */}
+      <Route path="/stream/:animeId" element={<Stream />} />
+      <Route path="/genres" element={<Genres />} />
     </Routes>
   );
 }

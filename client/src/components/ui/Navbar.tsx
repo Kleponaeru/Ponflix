@@ -128,14 +128,15 @@ export default function Navbar() {
       <div className="px-4 md:px-16 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="text-red-600 font-bold text-2xl md:text-3xl">
-            NETFLIX
+            <img src="/ponflix-20-03-2025.png" alt="" height={80} width={80}/>
+            {/* PONFLIX */}
           </Link>
           <div className="hidden md:flex ml-8 gap-6">
             <Link to="/" className="text-white hover:text-gray-300">
               Home
             </Link>
-            <Link to="/genre" className="text-white hover:text-gray-300">
-              Genre
+            <Link to="/genres" className="text-white hover:text-gray-300">
+              Genres
             </Link>
             {/* <Link to="/movies" className="text-white hover:text-gray-300">
               Movies
@@ -251,17 +252,14 @@ export default function Navbar() {
             <Link to="/" className="text-white hover:text-gray-300">
               Home
             </Link>
-            <Link to="/genre" className="text-white hover:text-gray-300">
-              Genre
+            <Link to="/genres" className="text-white hover:text-gray-300">
+              Genres
             </Link>
-            {/* <Link to="/movies" className="text-white hover:text-gray-300">
-              Movies
+            {/* <Link to="/manhwa" className="text-white hover:text-gray-300">
+              Manhwa
             </Link>
-            <Link to="/new" className="text-white hover:text-gray-300">
-              New & Popular
-            </Link>
-            <Link to="/mylist" className="text-white hover:text-gray-300">
-              My List
+            <Link to="/manga" className="text-white hover:text-gray-300">
+              Manga
             </Link> */}
           </div>
         </div>

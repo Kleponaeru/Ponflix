@@ -7,7 +7,7 @@ interface Anime {
   title: string;
   animeId: string;
   href: string;
-  otakudesuUrl: string;
+  samehadakuUrl: string;
   poster: string;
   status?: string;
   score?: string;
@@ -15,7 +15,7 @@ interface Anime {
     title: string;
     genreId: string;
     href: string;
-    otakudesuUrl: string;
+    samehadakuUrl: string;
   }[];
 }
 
@@ -38,7 +38,7 @@ export default function Navbar() {
   const [isLoading, setIsLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const apiBaseUrl = "http://localhost:3001";
+  const apiBaseUrl = "https://ponflix-api.vercel.app";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 0);
@@ -57,7 +57,7 @@ export default function Navbar() {
     const fetchSearchResults = async () => {
       try {
         const res = await fetch(
-          `${apiBaseUrl}/otakudesu/search?q=${encodeURIComponent(searchQuery)}`
+          `${apiBaseUrl}/samehadaku/search?q=${encodeURIComponent(searchQuery)}`
         );
 
         if (!res.ok) {
@@ -128,7 +128,7 @@ export default function Navbar() {
       <div className="px-4 md:px-16 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" className="text-red-600 font-bold text-2xl md:text-3xl">
-            <img src="/ponflix-20-03-2025.png" alt="" height={80} width={80}/>
+            <img src="/ponflix-logo.png" alt="" height={80} width={80}/>
             {/* PONFLIX */}
           </Link>
           <div className="hidden md:flex ml-8 gap-6">

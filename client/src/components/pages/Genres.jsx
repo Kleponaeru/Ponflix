@@ -14,7 +14,7 @@ export default function Genres() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredGenres, setFilteredGenres] = useState([]);
   const navigate = useNavigate();
-  const apiBaseUrl = "http://localhost:3001";
+  const apiBaseUrl = "https://ponflix-api.vercel.app";
 
   // Predefined color mappings for genres
   const genreColors = {
@@ -43,7 +43,7 @@ export default function Genres() {
     const fetchGenres = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${apiBaseUrl}/otakudesu/genres/`);
+        const response = await fetch(`${apiBaseUrl}/samehadaku/genres/`);
         const data = await response.json();
 
         // Map API data to component format

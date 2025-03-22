@@ -28,7 +28,7 @@ export default function CompletedDetail() {
   const [sortOption, setSortOption] = useState("default");
   const navigate = useNavigate();
 
-  const apiBaseUrl = "http://localhost:3001";
+  const apiBaseUrl = "https://ponflix-api.vercel.app";
   const itemsPerPage = 15;
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function CompletedDetail() {
       try {
         while (hasMore) {
           const res = await fetch(
-            `${apiBaseUrl}/otakudesu/completed?page=${currentPage}`
+            `${apiBaseUrl}/samehadaku/completed?page=${currentPage}`
           );
           const data = await res.json();
 
@@ -49,9 +49,10 @@ export default function CompletedDetail() {
             data.data.animeList.map(async (anime) => {
               try {
                 const detailRes = await fetch(
-                  `${apiBaseUrl}/otakudesu/anime/${anime.animeId}`
+                  `${apiBaseUrl}/samehadaku/anime/${anime.animeId}`
                 );
                 const detailData = await detailRes.json();
+                const rating = detailData.data.score || "N/A";
 
                 const yearMatch = detailData.data.aired
                   ? detailData.data.aired.match(/\d{4}/)
@@ -68,7 +69,7 @@ export default function CompletedDetail() {
                   id: anime.animeId,
                   title: anime.title,
                   imageUrl: anime.poster,
-                  rating: anime.score,
+                  rating: rating,
                   episodes: anime.episodes,
                   year: year,
                   genre: genre,
@@ -84,7 +85,7 @@ export default function CompletedDetail() {
                   title: anime.title,
                   imageUrl: anime.poster,
                   episodes: anime.episodes,
-                  rating: anime.score,
+                  rating: "N/A",
                   year: null,
                   genre: "Unknown",
                 };
@@ -358,7 +359,7 @@ export default function CompletedDetail() {
                           >
                             <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                           </svg>
-                          {anime.rating}
+                          {anime.rating.value}
                         </div>
                       </div>
                       <h3 className="text-sm font-medium text-white line-clamp-1 group-hover:text-red-500 transition-colors">

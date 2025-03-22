@@ -28,7 +28,7 @@ export default function DetailGenre() {
   const [filteredData, setFilteredData] = useState([]);
   const navigate = useNavigate();
 
-  const apiBaseUrl = "http://localhost:3001";
+  const apiBaseUrl = "https://ponflix-api.vercel.app";
   const itemsPerPage = 15;
 
   const formatGenreName = (name) => {
@@ -38,15 +38,21 @@ export default function DetailGenre() {
       .join(" ");
   };
 
-  // Fetch anime details in parallel
   const fetchAnimeDetails = async (animeList) => {
     const animeWithDetails = await Promise.all(
       animeList.map(async (anime) => {
         try {
           const detailRes = await fetch(
-            `${apiBaseUrl}/otakudesu/anime/${anime.id}`
+            `${apiBaseUrl}/samehadaku/anime/${anime.id}`
           );
           const detailData = await detailRes.json();
+
+          console.log(`Details for ${anime.id}:`, detailData);
+
+          if (!detailData.data || typeof detailData.data !== "object") {
+            console.warn(`Invalid response for ${anime.id}:`, detailData);
+            throw new Error(`Invalid response structure for ${anime.id}`);
+          }
 
           const yearMatch = detailData.data.aired
             ? detailData.data.aired.match(/\d{4}/)
@@ -56,7 +62,7 @@ export default function DetailGenre() {
           return {
             ...anime,
             episodes: detailData.data.episodes || "N/A",
-            rating: detailData.data.score || "N/A",
+            rating: detailData.data.score || { value: "N/A", users: "0" },
             status: detailData.data.status || anime.status || "Unknown",
             genre:
               detailData.data.genreList?.length > 0
@@ -66,12 +72,12 @@ export default function DetailGenre() {
             year: year,
           };
         } catch (error) {
-          console.warn(`Failed to fetch details for ${anime.id}`);
+          console.warn(`Failed to fetch details for ${anime.id}:`, error);
           return {
             ...anime,
             episodes: "N/A",
+            rating: { value: "N/A", users: "0" },
             status: anime.status || "Unknown",
-            rating: "N/A",
             genre: "Unknown",
             genres: [],
             year: null,
@@ -85,14 +91,25 @@ export default function DetailGenre() {
   useEffect(() => {
     const fetchAllData = async () => {
       setInitialLoading(true);
+      setAllAnimeData([]); // Clear stale data
+      setFilteredData([]); // Clear stale data
       let allAnime = [];
+      let currentPage = 1;
 
       try {
-        // Fetch and display the first page immediately
+        // Fetch first page
         const firstPageRes = await fetch(
-          `${apiBaseUrl}/otakudesu/genres/${genreId}?page=1`
+          `${apiBaseUrl}/samehadaku/genres/${genreId}?page=1`
         );
         const firstPageData = await firstPageRes.json();
+        console.log("First page response:", firstPageData);
+
+        if (
+          !firstPageData.data ||
+          !Array.isArray(firstPageData.data.animeList)
+        ) {
+          throw new Error("Invalid genre API response");
+        }
 
         const firstPageAnime = firstPageData.data.animeList.map((anime) => ({
           id: anime.animeId,
@@ -109,14 +126,22 @@ export default function DetailGenre() {
 
         // Fetch remaining pages in the background
         setBackgroundLoading(true);
-        let currentPage = 2;
-        let hasMore = firstPageAnime.length === itemsPerPage;
+        currentPage = 2;
 
-        while (hasMore) {
+        while (true) {
+          // Loop until no more data
           const res = await fetch(
-            `${apiBaseUrl}/otakudesu/genres/${genreId}?page=${currentPage}`
+            `${apiBaseUrl}/samehadaku/genres/${genreId}?page=${currentPage}`
           );
           const data = await res.json();
+          console.log(`Page ${currentPage} response:`, data);
+
+          if (!data.data || !Array.isArray(data.data.animeList)) {
+            console.warn(
+              `Invalid or empty response for page ${currentPage}, stopping fetch.`
+            );
+            break; // Stop if response is invalid
+          }
 
           const animeList = data.data.animeList.map((anime) => ({
             id: anime.animeId,
@@ -124,24 +149,21 @@ export default function DetailGenre() {
             imageUrl: anime.poster,
           }));
 
+          if (animeList.length === 0) {
+            console.log(
+              `No more anime on page ${currentPage}, stopping fetch.`
+            );
+            break; // Stop if no more anime
+          }
+
           const animeWithDetails = await fetchAnimeDetails(animeList);
           allAnime = [...allAnime, ...animeWithDetails];
 
-          hasMore = animeList.length === itemsPerPage;
           currentPage++;
-
-          // Update state incrementally
           setAllAnimeData([...allAnime]);
           setFilteredData([...allAnime]);
           setTotalPages(Math.ceil(allAnime.length / itemsPerPage));
 
-          console.log(
-            `Fetched page ${
-              currentPage - 1
-            } for genre ${genreId}. Total anime: ${allAnime.length}`
-          );
-
-          // Safety limit
           if (currentPage > 100) {
             console.warn(
               `Reached page limit of 100 for genre ${genreId}. Stopping fetch.`
@@ -162,7 +184,7 @@ export default function DetailGenre() {
     };
 
     if (genreId) fetchAllData();
-  }, [genreId]);
+  }, [genreId, apiBaseUrl, itemsPerPage]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
@@ -179,12 +201,18 @@ export default function DetailGenre() {
   useEffect(() => {
     setLoading(true);
     const timer = setTimeout(() => {
-      if (filteredData.length > 0) {
+      if (Array.isArray(filteredData)) {
         const startIndex = (page - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
-        setAnimeList(filteredData.slice(startIndex, endIndex));
+        const newAnimeList = filteredData.slice(startIndex, endIndex);
+        console.log(
+          "Rendering animeList:",
+          JSON.stringify(newAnimeList, null, 2)
+        );
+        setAnimeList(newAnimeList);
         setTotalPages(Math.ceil(filteredData.length / itemsPerPage));
       } else {
+        console.error("filteredData is not an array:", filteredData);
         setAnimeList([]);
         setTotalPages(0);
       }
@@ -192,7 +220,7 @@ export default function DetailGenre() {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [page, filteredData]);
+  }, [page, filteredData, itemsPerPage]);
 
   const handlePrevPage = () => {
     if (page > 1) {
@@ -360,81 +388,70 @@ export default function DetailGenre() {
                 initial="hidden"
                 animate="visible"
               >
-                {animeList.length > 0 ? (
-                  animeList.map((anime) => (
-                    <motion.div
-                      key={anime.id}
-                      variants={itemVariants}
-                      onClick={() => handleStreamClick(anime.id)}
-                      className="group flex flex-col cursor-pointer"
-                    >
-                      <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg mb-2 bg-gray-800">
-                        <img
-                          src={anime.imageUrl || "/placeholder.svg"}
-                          alt={anime.title}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          loading="lazy"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="absolute bottom-0 left-0 right-0 p-3">
-                            <div
-                              className={`${
-                                anime.status === "Ongoing"
-                                  ? "bg-red-600"
-                                  : "bg-green-600"
-                              } text-white text-xs font-medium px-2 py-1 rounded-sm inline-block mb-2`}
-                            >
-                              {anime.status === "Completed"
-                                ? "COMPLETED"
-                                : anime.status === "Ongoing"
-                                ? "ONGOING"
-                                : genreId
-                                ? genreId.toUpperCase()
-                                : "ANIME"}
-                            </div>
-                            <p className="text-white text-sm font-medium line-clamp-2">
-                              {anime.title}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center">
-                          <svg
-                            className="w-3 h-3 mr-1 fill-current"
-                            viewBox="0 0 24 24"
+                {animeList.map((anime) => (
+                  <motion.div
+                    key={anime.id}
+                    variants={itemVariants}
+                    onClick={() => handleStreamClick(anime.id)}
+                    className="group flex flex-col cursor-pointer"
+                  >
+                    <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg mb-2 bg-gray-800">
+                      <img
+                        src={anime.imageUrl || "/placeholder.svg"}
+                        alt={anime.title}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="absolute bottom-0 left-0 right-0 p-3">
+                          <div
+                            className={`${
+                              anime.status === "Ongoing"
+                                ? "bg-red-600"
+                                : "bg-green-600"
+                            } text-white text-xs font-medium px-2 py-1 rounded-sm inline-block mb-2`}
                           >
-                            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-                          </svg>
-                          {anime.rating}
+                            {anime.status === "Completed"
+                              ? "COMPLETED"
+                              : anime.status === "Ongoing"
+                              ? "ONGOING"
+                              : genreId
+                              ? genreId.toUpperCase()
+                              : "ANIME"}
+                          </div>
+                          <p className="text-white text-sm font-medium line-clamp-2">
+                            {anime.title}
+                          </p>
                         </div>
                       </div>
-                      <h3 className="text-sm font-medium text-white line-clamp-1 group-hover:text-red-500 transition-colors">
-                        {anime.title}
-                      </h3>
-                      <div className="flex flex-wrap justify-between items-center mt-1 w-full">
-                        <div className="flex items-center text-xs text-gray-400">
-                          <Calendar className="h-3 w-3 mr-1 text-gray-500" />
-                          <span>{anime.year}</span>
-                          <span className="mx-1">•</span>
-                          <span>{anime.episodes} Ep</span>
-                        </div>
-
-                        {anime.genre && (
-                          <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300 mt-1 sm:mt-0">
-                            {anime.genre}
-                          </span>
-                        )}
+                      <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center">
+                        <svg
+                          className="w-3 h-3 mr-1 fill-current"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+                        {anime.rating.value}
                       </div>
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="col-span-full py-20 text-center">
-                    <p className="text-gray-400 text-lg mb-2">No anime found</p>
-                    <p className="text-gray-500 text-sm">
-                      Try a different search term
-                    </p>
-                  </div>
-                )}
+                    </div>
+                    <h3 className="text-sm font-medium text-white line-clamp-1 group-hover:text-red-500 transition-colors">
+                      {anime.title}
+                    </h3>
+                    <div className="flex flex-wrap justify-between items-center mt-1 w-full">
+                      <div className="flex items-center text-xs text-gray-400">
+                        <Calendar className="h-3 w-3 mr-1 text-gray-500" />
+                        <span>{anime.year || "N/A"}</span>
+                        <span className="mx-1">•</span>
+                        <span>{anime.episodes} Ep</span>
+                      </div>
+                      {anime.genre && (
+                        <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300 mt-1 sm:mt-0">
+                          {anime.genre}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
               </motion.div>
             )}
 

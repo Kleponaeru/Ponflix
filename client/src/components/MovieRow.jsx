@@ -28,7 +28,7 @@ export default function MovieRow({
   const [activeDot, setActiveDot] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const apiBaseUrl = "http://localhost:3001";
+  const apiBaseUrl = "https://ponflix-api.vercel.app";
 
   // Fetch detailed information for each movie
   const fetchMovieDetails = async (movieList) => {
@@ -36,29 +36,52 @@ export default function MovieRow({
       movieList.map(async (movie) => {
         try {
           const response = await fetch(
-            `${apiBaseUrl}/otakudesu/anime/${movie.id}`
+            `${apiBaseUrl}/samehadaku/anime/${movie.id}`
           );
           const data = await response.json();
 
+          // Check if data has the expected structure
           if (!data.data) {
             throw new Error("Invalid data format");
           }
+
+          // Debug the structure
+          console.log("API response structure:", data);
+
+          // Handle possible nested objects that might be causing the error
+          const rating =
+            data.data.score && typeof data.data.score === "object"
+              ? data.data.score.value || "N/A"
+              : data.data.score || "N/A";
 
           const yearMatch = data.data.aired
             ? data.data.aired.match(/\d{4}/)
             : null;
           const year = yearMatch ? Number.parseInt(yearMatch[0]) : "N/A";
 
-          const genre =
-            data.data.genreList && data.data.genreList.length > 0
-              ? data.data.genreList[0].title
-              : "Unknown";
+          // Handle potentially nested genre data
+          let genre = "Unknown";
+          if (data.data.genreList && data.data.genreList.length > 0) {
+            genre =
+              typeof data.data.genreList[0] === "object" &&
+              data.data.genreList[0].title
+                ? data.data.genreList[0].title
+                : typeof data.data.genreList[0] === "string"
+                ? data.data.genreList[0]
+                : "Unknown";
+          }
+
+          // Process episodes safely
+          const episodes =
+            typeof data.data.episodes === "object"
+              ? data.data.episodes.value || "N/A"
+              : data.data.episodes || "N/A";
 
           return {
             ...movie,
-            rating: data.data.score || "N/A",
-            episodes: data.data.episodes || "N/A",
-            genre: genre || "N/A",
+            rating: rating,
+            episodes: episodes,
+            genre: genre,
             year: year,
             status: data.data.status || "Unknown",
           };
@@ -311,7 +334,7 @@ export default function MovieRow({
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {loading ? (
-            Array.from({ length: 6 }).map((_, index) => (
+            Array.from({ length: 8 }).map((_, index) => (
               <div
                 key={`skeleton-${index}`}
                 className="flex-shrink-0 relative"

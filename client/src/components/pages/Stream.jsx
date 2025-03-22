@@ -18,6 +18,7 @@ export default function Stream() {
 
   const EPISODES_PER_TAB = 30;
 
+  // For the StreamPage component:
   useEffect(() => {
     // Reset player state when animeId changes
     setSelectedUrl(null);
@@ -28,7 +29,7 @@ export default function Stream() {
     const fetchAnimeDetails = async () => {
       try {
         const res = await fetch(
-          `http://localhost:3001/otakudesu/anime/${animeId}`
+          `https://ponflix-api.vercel.app/samehadaku/anime/${animeId}`
         );
         if (!res.ok) {
           throw new Error(`Failed to fetch anime: ${res.status}`);
@@ -39,8 +40,27 @@ export default function Stream() {
           const sortedEpisodes = (data.data.episodeList || []).sort(
             (a, b) => Number(a.title) - Number(b.title)
           );
+
+          // Enhanced title fallback logic
+          let displayTitle = data.data.title;
+
+          // If main title is empty, try english
+          if (!displayTitle || displayTitle === "") {
+            displayTitle = data.data.english || "";
+          }
+
+          // If still empty, try synonyms
+          if (!displayTitle || displayTitle === "") {
+            displayTitle = data.data.synonyms || "";
+          }
+
+          // If still empty, try japanese
+          if (!displayTitle || displayTitle === "") {
+            displayTitle = data.data.japanese || "Unknown Anime";
+          }
+
           setAnime({
-            title: data.data.title,
+            title: displayTitle,
             episodes: sortedEpisodes,
           });
         } else {
@@ -64,7 +84,7 @@ export default function Stream() {
 
     try {
       const episodeRes = await fetch(
-        `http://localhost:3001/otakudesu/episode/${episode.episodeId}`
+        `https://ponflix-api.vercel.app/samehadaku/episode/${episode.episodeId}`
       );
       if (!episodeRes.ok) {
         throw new Error("Failed to fetch episode details");
@@ -82,7 +102,7 @@ export default function Stream() {
 
         if (server720p && server720p.serverList[0]) {
           const serverRes = await fetch(
-            `http://localhost:3001/otakudesu/server/${server720p.serverList[0].serverId}`
+            `https://ponflix-api.vercel.app/samehadaku/server/${server720p.serverList[0].serverId}`
           );
           const serverData = await serverRes.json();
           console.log(
@@ -105,7 +125,7 @@ export default function Stream() {
           for (const quality of episodeData.data.server.qualities) {
             if (quality.serverList[0]) {
               const serverRes = await fetch(
-                `http://localhost:3001/otakudesu/server/${quality.serverList[0].serverId}`
+                `https://ponflix-api.vercel.app/samehadaku/server/${quality.serverList[0].serverId}`
               );
               const serverData = await serverRes.json();
               console.log(

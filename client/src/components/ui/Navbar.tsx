@@ -7,7 +7,7 @@ interface Anime {
   title: string;
   animeId: string;
   href: string;
-  otakudesuUrl: string;
+  samehadakuUrl: string;
   poster: string;
   status?: string;
   score?: string;
@@ -15,7 +15,7 @@ interface Anime {
     title: string;
     genreId: string;
     href: string;
-    otakudesuUrl: string;
+    samehadakuUrl: string;
   }[];
 }
 
@@ -38,7 +38,7 @@ export default function Navbar() {
   const [isLoading, setIsLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const apiBaseUrl = "http://localhost:3001";
+  const apiBaseUrl = "https://ponflix-api.vercel.app";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 0);
@@ -57,7 +57,7 @@ export default function Navbar() {
     const fetchSearchResults = async () => {
       try {
         const res = await fetch(
-          `${apiBaseUrl}/otakudesu/search?q=${encodeURIComponent(searchQuery)}`
+          `${apiBaseUrl}/samehadaku/search?q=${encodeURIComponent(searchQuery)}`
         );
 
         if (!res.ok) {

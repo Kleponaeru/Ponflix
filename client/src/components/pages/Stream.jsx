@@ -90,7 +90,7 @@ export default function Stream() {
         throw new Error("Failed to fetch episode details");
       }
       const episodeData = await episodeRes.json();
-      console.log("Episode Data:", JSON.stringify(episodeData, null, 2));
+      // console.log("Episode Data:", JSON.stringify(episodeData, null, 2));
 
       if (episodeData.ok && episodeData.data) {
         let url = null;
@@ -98,20 +98,20 @@ export default function Stream() {
         const server720p = episodeData.data.server.qualities.find(
           (q) => q.title === "720p"
         );
-        console.log("720p Quality Found:", server720p || "Not available");
+        // console.log("720p Quality Found:", server720p || "Not available");
 
         if (server720p && server720p.serverList[0]) {
           const serverRes = await fetch(
             `https://ponflix-api.vercel.app/samehadaku/server/${server720p.serverList[0].serverId}`
           );
           const serverData = await serverRes.json();
-          console.log(
-            "720p Server Response:",
-            JSON.stringify(serverData, null, 2)
-          );
+          // console.log(
+          //   "720p Server Response:",
+          //   JSON.stringify(serverData, null, 2)
+          // );
           if (serverData.ok && serverData.data && serverData.data.url) {
             url = serverData.data.url;
-            console.log("Selected 720p URL:", url);
+            // console.log("Selected 720p URL:", url);
           }
         }
 
@@ -142,7 +142,7 @@ export default function Stream() {
         }
 
         if (url) {
-          console.log("Setting selectedUrl in player:", url);
+          // console.log("Setting selectedUrl in player:", url);
           setSelectedUrl(url);
         } else {
           throw new Error("No streaming URL found");
@@ -310,12 +310,13 @@ export default function Stream() {
             {/* Video Player */}
             <div className="mb-8 relative">
               {selectedUrl ? (
-                <iframe
+                <video
                   src={selectedUrl}
                   className="w-full h-[300px] md:h-[500px] rounded-lg"
-                  allowFullScreen
+                  controls
+                  playsInline
                   title={`Streaming ${anime.title} Episode ${selectedEpisode}`}
-                ></iframe>
+                ></video>
               ) : (
                 <div className="w-full h-[300px] md:h-[500px] bg-gray-800 rounded-lg flex items-center justify-center">
                   <div className="text-center p-6">

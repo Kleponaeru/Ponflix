@@ -92,3 +92,13 @@ html::-webkit-scrollbar-thumb:hover {
 .scroll-container {
   scroll-behavior: smooth;
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    background-color: #000000;
+    color: #ffffff;
+  }
+}

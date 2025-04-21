@@ -13,7 +13,7 @@
 
 ## 🛠 Tech Stack
 - **Frontend:** React, Tailwind CSS  
-- **Backend:** Coming soon / (or add backend stack if available)  
+- **Backend:** Typescript
 - **API:** Consumes anime data from public APIs (e.g., [Jikan API](https://jikan.moe/) or your own)
 
 ## 📁 Folder Structure (Frontend)

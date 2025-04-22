@@ -16,8 +16,5 @@
 - **Backend:** Typescript
 - **API:** Consumes anime data from public APIs (e.g., [Jikan API](https://jikan.moe/) or your own)
 
-## 📁 Folder Structure (Frontend)
-ponflix/ ├── public/ ├── src/ │ ├── components/ │ ├── pages/ │ ├── services/ │ ├── hooks/ │ └── App.jsx ├── tailwind.config.js └── package.json
-
 ## 📌 Upcoming Features
 - 🔖 **Watchlist** – Save and manage your favorite shows effortlessly

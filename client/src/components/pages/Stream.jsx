@@ -12,7 +12,7 @@ export default function Stream() {
   const [selectedUrl, setSelectedUrl] = useState(null);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [selectedServer, setSelectedServer] = useState(null);
-  const [servers, setServers] = useState([]);
+  const [servers, setServers] = useState({ "720p": [], "1080p": [] }); // Fixed initial state
   const [loading, setLoading] = useState(true);
   const [episodeLoading, setEpisodeLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ export default function Stream() {
     setSelectedUrl(null);
     setSelectedEpisode(null);
     setSelectedServer(null);
-    setServers([]);
+    setServers({ "720p": [], "1080p": [] }); // Consistent reset
     setError(null);
     setActiveTab(0);
 
@@ -81,37 +81,55 @@ export default function Stream() {
       const episodeData = await episodeRes.json();
 
       if (episodeData.ok && episodeData.data) {
-        const server720p = episodeData.data.server.qualities.find(
-          (q) => q.title === "720p"
+        const qualities = episodeData.data.server.qualities.filter(
+          (q) => q.title === "720p" || q.title === "1080p"
         );
+        const serverMap = {
+          "720p": [],
+          "1080p": [],
+        };
+        qualities.forEach((q) => {
+          if (q.title === "720p" || q.title === "1080p") {
+            serverMap[q.title] = q.serverList;
+          }
+        });
 
-        if (server720p && server720p.serverList.length > 0) {
-          setServers(server720p.serverList);
+        setServers(serverMap);
 
-          const targetServerId = serverId || server720p.serverList[0].serverId;
+        let targetServer = null;
+        if (serverId) {
+          targetServer =
+            serverMap["720p"].find((s) => s.serverId === serverId) ||
+            serverMap["1080p"].find((s) => s.serverId === serverId);
+        }
+        if (!targetServer) {
+          targetServer = serverMap["720p"][0] || serverMap["1080p"][0];
+        }
+
+        if (targetServer) {
           const serverRes = await fetch(
-            `https://ponflix-api.vercel.app/samehadaku/server/${targetServerId}`
+            `https://ponflix-api.vercel.app/samehadaku/server/${targetServer.serverId}`
           );
           const serverData = await serverRes.json();
 
           if (serverData.ok && serverData.data && serverData.data.url) {
             setSelectedUrl(serverData.data.url);
-            setSelectedServer(targetServerId);
+            setSelectedServer(targetServer.serverId);
           } else {
             throw new Error("No streaming URL found");
           }
         } else if (episodeData.data.defaultStreamingUrl) {
           setSelectedUrl(episodeData.data.defaultStreamingUrl);
-          setServers([]);
+          setServers({ "720p": [], "1080p": [] });
         } else {
           throw new Error("No streaming URL found");
         }
       }
     } catch (error) {
-      console.error("Error fetching streaming URL:", error);
-      setError("Failed to load episode. Please try again.");
+      // console.error("Error fetching streaming URL:", error);
+      setError("Failed to load the episode. Please try a different server.");
       setSelectedUrl(null);
-      setServers([]);
+      setServers({ "720p": [], "1080p": [] });
     } finally {
       setEpisodeLoading(false);
     }
@@ -149,8 +167,10 @@ export default function Stream() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-black text-white p-4 md:p-8 pt-20">
-          <div className="max-w-7xl mx-auto mt-12">
+        <div className="min-h-screen bg-black text-white p-4 md:p-8 pt-24">
+          {" "}
+          {/* Updated to pt-24 */}
+          <div className="max-w-7xl mx-auto mt-20">
             <Skeleton
               variant="text"
               width={200}
@@ -191,13 +211,15 @@ export default function Stream() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 pt-28 z-10">
           <div className="text-red-500 text-xl mb-4">
             {error || "Anime not found"}
           </div>
-          <Link
-            to="/"
-            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center gap-2 mt-12"
+          <button
+            onClick={() => {
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center gap-2 pointer-events-auto z-20"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -205,16 +227,17 @@ export default function Stream() {
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              style={{ pointerEvents: "none" }}
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M15 19l-7-7 7-7"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               />
             </svg>
-            Back to Home
-          </Link>
+            Try Again
+          </button>
         </div>
       </>
     );
@@ -228,7 +251,9 @@ export default function Stream() {
       <Navbar />
       <div className="min-h-screen bg-black text-white p-4 md:p-8 pt-24">
         <div className="max-w-7xl mx-auto">
-          <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 mt-12 flex-wrap">
+          <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 mt-20 flex-wrap">
+            {" "}
+            {/* Removed mt-12 */}
             <Link
               to="/"
               className="text-red-500 hover:text-red-600 transition-colors"
@@ -286,40 +311,88 @@ export default function Stream() {
                 </div>
 
                 {/* Server List */}
-                {servers.length > 0 && (
+                {(servers["720p"].length > 0 ||
+                  servers["1080p"].length > 0) && (
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-2">
-                      Select Server (720p)
+                      Select Server
                     </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {servers.map((server) => (
-                        <button
-                          key={server.serverId}
-                          onClick={() =>
-                            fetchStreamingUrl(
-                              currentTabEpisodes.find(
-                                (ep) => ep.title === selectedEpisode
-                              ),
-                              server.serverId
-                            )
-                          }
-                          disabled={
-                            episodeLoading || selectedServer === server.serverId
-                          }
-                          className={`px-4 py-2 rounded-lg transition-colors ${
-                            selectedServer === server.serverId
-                              ? "bg-red-600 text-white"
-                              : "bg-gray-700 text-white hover:bg-gray-600"
-                          } ${
-                            episodeLoading
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          }`}
-                        >
-                          Server {server.serverId}
-                        </button>
-                      ))}
-                    </div>
+                    {/* 720p Servers */}
+                    {servers["720p"].length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-md font-medium text-gray-300 mb-2">
+                          720p Servers
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {servers["720p"].map((server) => (
+                            <button
+                              key={server.serverId}
+                              onClick={() =>
+                                fetchStreamingUrl(
+                                  currentTabEpisodes.find(
+                                    (ep) => ep.title === selectedEpisode
+                                  ),
+                                  server.serverId
+                                )
+                              }
+                              disabled={
+                                episodeLoading ||
+                                selectedServer === server.serverId
+                              }
+                              className={`px-4 py-2 rounded-lg transition-colors ${
+                                selectedServer === server.serverId
+                                  ? "bg-red-600 text-white"
+                                  : "bg-gray-700 text-white hover:bg-gray-600"
+                              } ${
+                                episodeLoading
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                            >
+                              {server.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {/* 1080p Servers */}
+                    {servers["1080p"].length > 0 && (
+                      <div>
+                        <h4 className="text-md font-medium text-gray-300 mb-2">
+                          1080p Servers
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {servers["1080p"].map((server) => (
+                            <button
+                              key={server.serverId}
+                              onClick={() =>
+                                fetchStreamingUrl(
+                                  currentTabEpisodes.find(
+                                    (ep) => ep.title === selectedEpisode
+                                  ),
+                                  server.serverId
+                                )
+                              }
+                              disabled={
+                                episodeLoading ||
+                                selectedServer === server.serverId
+                              }
+                              className={`px-4 py-2 rounded-lg transition-colors ${
+                                selectedServer === server.serverId
+                                  ? "bg-red-600 text-white"
+                                  : "bg-gray-700 text-white hover:bg-gray-600"
+                              } ${
+                                episodeLoading
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                            >
+                              {server.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -363,7 +436,7 @@ export default function Stream() {
                       <button
                         key={tab.index}
                         onClick={() => setActiveTab(tab.index)}
-                        className={`px-4 py-2 mr-2 rounded-t-lg transition colors ${
+                        className={`px-4 py-2 mr-2 rounded-t-lg transition-colors ${
                           activeTab === tab.index
                             ? "bg-gray-700 text-white"
                             : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"

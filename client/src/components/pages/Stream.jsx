@@ -18,6 +18,9 @@ export default function Stream() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
 
+  const [showFull, setShowFull] = useState(false);
+  const isMobile = window.innerWidth < 768;
+
   const EPISODES_PER_TAB = 30;
 
   useEffect(() => {
@@ -170,7 +173,7 @@ export default function Stream() {
         <div className="min-h-screen bg-black text-white p-4 md:p-8 pt-24">
           {" "}
           {/* Updated to pt-24 */}
-          <div className="max-w-7xl mx-auto mt-20">
+          <div className="max-w-7xl mx-auto md:mt-20">
             <Skeleton
               variant="text"
               width={200}
@@ -251,9 +254,8 @@ export default function Stream() {
       <Navbar />
       <div className="min-h-screen bg-black text-white p-4 md:p-8 pt-24">
         <div className="max-w-7xl mx-auto">
-          <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 mt-20 flex-wrap">
+          <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 md:mt-20 flex-wrap">
             {" "}
-            {/* Removed mt-12 */}
             <Link
               to="/"
               className="text-red-500 hover:text-red-600 transition-colors"
@@ -314,16 +316,17 @@ export default function Stream() {
                 {(servers["720p"].length > 0 ||
                   servers["1080p"].length > 0) && (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-2">
+                    <h3 className="text-lg md:text-xl font-semibold mb-2">
                       Select Server
                     </h3>
+
                     {/* 720p Servers */}
                     {servers["720p"].length > 0 && (
                       <div className="mb-4">
-                        <h4 className="text-md font-medium text-gray-300 mb-2">
+                        <h4 className="text-sm md:text-md font-medium text-gray-300 mb-1 md:mb-2">
                           720p Servers
                         </h4>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1 md:gap-2">
                           {servers["720p"].map((server) => (
                             <button
                               key={server.serverId}
@@ -339,7 +342,7 @@ export default function Stream() {
                                 episodeLoading ||
                                 selectedServer === server.serverId
                               }
-                              className={`px-4 py-2 rounded-lg transition-colors ${
+                              className={`text-xs md:text-sm px-3 py-1.5 rounded-md md:rounded-lg transition-colors ${
                                 selectedServer === server.serverId
                                   ? "bg-red-600 text-white"
                                   : "bg-gray-700 text-white hover:bg-gray-600"
@@ -355,13 +358,14 @@ export default function Stream() {
                         </div>
                       </div>
                     )}
+
                     {/* 1080p Servers */}
                     {servers["1080p"].length > 0 && (
                       <div>
-                        <h4 className="text-md font-medium text-gray-300 mb-2">
+                        <h4 className="text-sm md:text-md font-medium text-gray-300 mb-1 md:mb-2">
                           1080p Servers
                         </h4>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1 md:gap-2">
                           {servers["1080p"].map((server) => (
                             <button
                               key={server.serverId}
@@ -377,7 +381,7 @@ export default function Stream() {
                                 episodeLoading ||
                                 selectedServer === server.serverId
                               }
-                              className={`px-4 py-2 rounded-lg transition-colors ${
+                              className={`text-xs md:text-sm px-3 py-1.5 rounded-md md:rounded-lg transition-colors ${
                                 selectedServer === server.serverId
                                   ? "bg-red-600 text-white"
                                   : "bg-gray-700 text-white hover:bg-gray-600"
@@ -400,18 +404,37 @@ export default function Stream() {
               {/* Description */}
               <div className="bg-gray-900 rounded-xl shadow-lg p-6 mt-6">
                 <h2 className="text-2xl font-semibold mb-4">
-                  About {anime.title}
+                  About - {anime.title}
                 </h2>
+
                 {anime.description &&
                 typeof anime.description === "object" &&
                 anime.description.paragraphs ? (
-                  <div className="text-gray-300 space-y-2">
-                    {anime.description.paragraphs.map((paragraph, index) => (
-                      <p key={index} className="text-gray-300">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
+                  <>
+                    <div className="text-gray-300 space-y-2">
+                      {anime.description.paragraphs.map((paragraph, index) => {
+                        if (!isMobile || showFull || index < 1) {
+                          return (
+                            <p key={index} className="text-gray-300">
+                              {isMobile && !showFull
+                                ? paragraph.slice(0, 150) +
+                                  (paragraph.length > 150 ? "..." : "")
+                                : paragraph}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                    {isMobile && anime.description.paragraphs.length > 1 && (
+                      <button
+                        onClick={() => setShowFull(!showFull)}
+                        className="mt-2 text-blue-400 hover:underline"
+                      >
+                        {showFull ? "See less" : "See more"}
+                      </button>
+                    )}
+                  </>
                 ) : (
                   <p className="text-gray-300">
                     {anime.description ?? "No description available"}

@@ -61,7 +61,7 @@ export default function Stream() {
           throw new Error("No valid anime data found");
         }
       } catch (err) {
-        console.error("Stream: Error:", err.message);
+        // console.error("Stream: Error:", err.message);
         setError(err.message);
         setAnime(null);
       } finally {
@@ -222,7 +222,7 @@ export default function Stream() {
             onClick={() => {
               window.location.reload();
             }}
-            className="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 transition-colors flex items-center gap-2 pointer-events-auto z-20"
+            className="px-4 py-2 bg-neutral-800 text-white rounded-md hover:bg-neutral-700 transition-colors flex items-center gap-2 pointer-events-auto z-20"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -254,19 +254,18 @@ export default function Stream() {
       <Navbar />
       <div className="min-h-screen bg-black text-white p-4 md:p-8 pt-24">
         <div className="max-w-7xl mx-auto">
-          <nav className="text-lg md:text-xl font-semibold mb-6 flex items-center gap-2 md:mt-20 flex-wrap">
-            {" "}
+          <nav className="text-sm md:text-lg lg:text-xl font-semibold mb-6 flex items-center gap-2 md:mt-20 flex-wrap">
             <Link
               to="/"
               className="text-red-500 hover:text-red-600 transition-colors"
             >
               Home
             </Link>
-            <span className="text-gray-400">/</span>
+            <span className="text-neutral-400">/</span>
             <span className="text-white">{anime.title}</span>
             {selectedEpisode && (
               <>
-                <span className="text-gray-400">/</span>
+                <span className="text-neutral-400">/</span>
                 <span className="text-white">Episode {selectedEpisode}</span>
               </>
             )}
@@ -275,7 +274,7 @@ export default function Stream() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: Player and Server List */}
             <div className="lg:col-span-2">
-              <div className="bg-gray-900 rounded-xl shadow-lg p-6">
+              <div className="bg-neutral-900/50 backdrop-blur-md rounded-xl shadow-lg p-6 border border-neutral-700/30">
                 {/* Video Player */}
                 <div className="mb-4 relative">
                   {selectedUrl ? (
@@ -287,13 +286,13 @@ export default function Stream() {
                       title={`Streaming ${anime.title} Episode ${selectedEpisode}`}
                     ></video>
                   ) : (
-                    <div className="w-full h-[300px] md:h-[500px] bg-gray-800 rounded-lg flex items-center justify-center">
+                    <div className="w-full h-[300px] md:h-[500px] bg-neutral-800/50 shadow-lg rounded-lg flex items-center justify-center">
                       <div className="text-center p-6">
-                        <p className="text-gray-400 text-lg mb-2">
+                        <p className="text-neutral-400 text-lg mb-2">
                           Select an episode to start streaming
                         </p>
-                        <p className="text-gray-500 text-sm">
-                          Episodes are listed on the right
+                        <p className="text-neutral-500 text-sm">
+                          Episodes are listed on the right or below
                         </p>
                       </div>
                     </div>
@@ -323,7 +322,7 @@ export default function Stream() {
                     {/* 720p Servers */}
                     {servers["720p"].length > 0 && (
                       <div className="mb-4">
-                        <h4 className="text-sm md:text-md font-medium text-gray-300 mb-1 md:mb-2">
+                        <h4 className="text-sm md:text-md font-medium text-neutral-300 mb-2 md:mb-2">
                           720p Servers
                         </h4>
                         <div className="flex flex-wrap gap-1 md:gap-2">
@@ -344,8 +343,8 @@ export default function Stream() {
                               }
                               className={`text-xs md:text-sm px-3 py-1.5 rounded-md md:rounded-lg transition-colors ${
                                 selectedServer === server.serverId
-                                  ? "bg-red-600 text-white"
-                                  : "bg-gray-700 text-white hover:bg-gray-600"
+                                  ? "bg-red-600/20 border border-red-600 text-white"
+                                  : "bg-neutral-800/50 backdrop-blur-sm border border-neutral-600/30 text-white hover:bg-neutral-700/40"
                               } ${
                                 episodeLoading
                                   ? "opacity-50 cursor-not-allowed"
@@ -362,7 +361,7 @@ export default function Stream() {
                     {/* 1080p Servers */}
                     {servers["1080p"].length > 0 && (
                       <div>
-                        <h4 className="text-sm md:text-md font-medium text-gray-300 mb-1 md:mb-2">
+                        <h4 className="text-sm md:text-md font-medium text-neutral-300 mb-2 md:mb-2">
                           1080p Servers
                         </h4>
                         <div className="flex flex-wrap gap-1 md:gap-2">
@@ -383,8 +382,8 @@ export default function Stream() {
                               }
                               className={`text-xs md:text-sm px-3 py-1.5 rounded-md md:rounded-lg transition-colors ${
                                 selectedServer === server.serverId
-                                  ? "bg-red-600 text-white"
-                                  : "bg-gray-700 text-white hover:bg-gray-600"
+                                  ? "bg-red-600/20 border border-red-600 text-white"
+                                  : "bg-neutral-800/50 backdrop-blur-sm border border-neutral-600/30 text-white hover:bg-neutral-700/40"
                               } ${
                                 episodeLoading
                                   ? "opacity-50 cursor-not-allowed"
@@ -402,7 +401,7 @@ export default function Stream() {
               </div>
 
               {/* Description */}
-              <div className="bg-gray-900 rounded-xl shadow-lg p-6 mt-6">
+              <div className="bg-neutral-900/50 backdrop-blur-md border border-white/10 rounded-xl shadow-lg p-6 mt-6">
                 <h2 className="text-2xl font-semibold mb-4">
                   About - {anime.title}
                 </h2>
@@ -411,11 +410,11 @@ export default function Stream() {
                 typeof anime.description === "object" &&
                 anime.description.paragraphs ? (
                   <>
-                    <div className="text-gray-300 space-y-2">
+                    <div className="text-neutral-300 space-y-2">
                       {anime.description.paragraphs.map((paragraph, index) => {
                         if (!isMobile || showFull || index < 1) {
                           return (
-                            <p key={index} className="text-gray-300">
+                            <p key={index} className="text-neutral-300">
                               {isMobile && !showFull
                                 ? paragraph.slice(0, 150) +
                                   (paragraph.length > 150 ? "..." : "")
@@ -436,7 +435,7 @@ export default function Stream() {
                     )}
                   </>
                 ) : (
-                  <p className="text-gray-300">
+                  <p className="text-neutral-300">
                     {anime.description ?? "No description available"}
                   </p>
                 )}
@@ -444,16 +443,16 @@ export default function Stream() {
             </div>
 
             {/* Right Column: Episode List */}
-            <div className="bg-gray-900 rounded-xl shadow-lg p-6 h-fit">
+            <div className="bg-neutral-900/50 backdrop-blur-md border border-white/10 rounded-xl shadow-lg p-6 h-fit">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-semibold">Episodes</h2>
-                <div className="text-sm text-gray-400">
+                <div className="text-sm text-neutral-400">
                   {anime.episodes.length} episodes
                 </div>
               </div>
 
               {tabs.length > 1 && (
-                <div className="mb-4 border-b border-gray-700">
+                <div className="mb-4 border-b border-white/20 bg-neutral-900/40 backdrop-blur-md rounded-t-lg">
                   <div className="flex overflow-x-auto pb-2 hide-scrollbar">
                     {tabs.map((tab) => (
                       <button
@@ -461,8 +460,8 @@ export default function Stream() {
                         onClick={() => setActiveTab(tab.index)}
                         className={`px-4 py-2 mr-2 rounded-t-lg transition-colors ${
                           activeTab === tab.index
-                            ? "bg-gray-700 text-white"
-                            : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                            ? "bg-neutral-700 text-white"
+                            : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-white"
                         }`}
                       >
                         {tab.label}
@@ -485,7 +484,7 @@ export default function Stream() {
                     />
                   ))
                 ) : (
-                  <div className="text-gray-400 text-center py-8 bg-gray-800/50 rounded-lg">
+                  <div className="text-neutral-400 text-center py-8 bg-neutral-800/50 rounded-lg">
                     No episodes available
                   </div>
                 )}
@@ -503,11 +502,13 @@ function EpisodeCard({ episode, isSelected, isLoading, onClick, thumbnail }) {
     <button
       onClick={onClick}
       disabled={isLoading}
-      className={`w-full flex items-center gap-4 p-3 rounded-lg transition-all duration-200 ${
-        isSelected
-          ? "bg-red-600/20 border border-red-600"
-          : "bg-gray-800 hover:bg-gray-700"
-      } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+      className={`w-full flex items-center gap-4 p-3 rounded-lg transition-all duration-200
+        ${
+          isSelected
+            ? "bg-red-600/20 border border-red-600"
+            : "bg-neutral-850/50 backdrop-blur-md border border-neutral-700/50 hover:bg-neutral-800/70 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:bg-neutral-800/70"
+        } 
+        ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <img
         src={thumbnail}
@@ -516,7 +517,7 @@ function EpisodeCard({ episode, isSelected, isLoading, onClick, thumbnail }) {
       />
       <div className="text-left">
         <p className="font-semibold">Episode {episode.title}</p>
-        <p className="text-sm text-gray-400">Click to watch</p>
+        <p className="text-sm text-neutral-400">Click to watch</p>
       </div>
     </button>
   );

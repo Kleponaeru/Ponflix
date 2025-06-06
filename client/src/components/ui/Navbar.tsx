@@ -7,7 +7,7 @@ interface Anime {
   title: string;
   animeId: string;
   href: string;
-  samehadakuUrl: string;
+  otakudesuUrl: string;
   poster: string;
   status?: string;
   score?: string;
@@ -15,7 +15,7 @@ interface Anime {
     title: string;
     genreId: string;
     href: string;
-    samehadakuUrl: string;
+    otakudesuUrl: string;
   }[];
 }
 
@@ -57,7 +57,7 @@ export default function Navbar() {
     const fetchSearchResults = async () => {
       try {
         const res = await fetch(
-          `${apiBaseUrl}/samehadaku/search?q=${encodeURIComponent(searchQuery)}`
+          `${apiBaseUrl}/otakudesu/search?q=${encodeURIComponent(searchQuery)}`
         );
 
         if (!res.ok) {

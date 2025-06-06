@@ -43,7 +43,7 @@ export default function DetailGenre() {
       animeList.map(async (anime) => {
         try {
           const detailRes = await fetch(
-            `${apiBaseUrl}/samehadaku/anime/${anime.id}`
+            `${apiBaseUrl}/otakudesu/anime/${anime.id}`
           );
           const detailData = await detailRes.json();
 
@@ -99,7 +99,7 @@ export default function DetailGenre() {
       try {
         // Fetch first page
         const firstPageRes = await fetch(
-          `${apiBaseUrl}/samehadaku/genres/${genreId}?page=1`
+          `${apiBaseUrl}/otakudesu/genres/${genreId}?page=1`
         );
         const firstPageData = await firstPageRes.json();
         console.log("First page response:", firstPageData);
@@ -131,7 +131,7 @@ export default function DetailGenre() {
         while (true) {
           // Loop until no more data
           const res = await fetch(
-            `${apiBaseUrl}/samehadaku/genres/${genreId}?page=${currentPage}`
+            `${apiBaseUrl}/otakudesu/genres/${genreId}?page=${currentPage}`
           );
           const data = await res.json();
           console.log(`Page ${currentPage} response:`, data);

@@ -41,7 +41,7 @@ export default function OngoingDetail() {
       try {
         while (hasMore) {
           const res = await fetch(
-            `${apiBaseUrl}/samehadaku/ongoing?page=${currentPage}`
+            `${apiBaseUrl}/otakudesu/ongoing?page=${currentPage}`
           );
           const data = await res.json();
 
@@ -49,7 +49,7 @@ export default function OngoingDetail() {
             data.data.animeList.map(async (anime) => {
               try {
                 const detailRes = await fetch(
-                  `${apiBaseUrl}/samehadaku/anime/${anime.animeId}`
+                  `${apiBaseUrl}/otakudesu/anime/${anime.animeId}`
                 );
                 const detailData = await detailRes.json();
 

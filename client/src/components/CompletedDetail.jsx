@@ -41,7 +41,7 @@ export default function CompletedDetail() {
       try {
         while (hasMore) {
           const res = await fetch(
-            `${apiBaseUrl}/samehadaku/completed?page=${currentPage}`
+            `${apiBaseUrl}/otakudesu/completed?page=${currentPage}`
           );
           const data = await res.json();
 
@@ -49,7 +49,7 @@ export default function CompletedDetail() {
             data.data.animeList.map(async (anime) => {
               try {
                 const detailRes = await fetch(
-                  `${apiBaseUrl}/samehadaku/anime/${anime.animeId}`
+                  `${apiBaseUrl}/otakudesu/anime/${anime.animeId}`
                 );
                 const detailData = await detailRes.json();
                 const rating = detailData.data.score || "N/A";

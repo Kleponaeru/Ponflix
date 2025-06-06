@@ -34,7 +34,7 @@ export default function Stream() {
     const fetchAnimeDetails = async () => {
       try {
         const res = await fetch(
-          `https://ponflix-api.vercel.app/samehadaku/anime/${animeId}`
+          `https://ponflix-api.vercel.app/otakudesu/anime/${animeId}`
         );
         if (!res.ok) throw new Error(`Failed to fetch anime: ${res.status}`);
         const data = await res.json();
@@ -78,7 +78,7 @@ export default function Stream() {
 
     try {
       const episodeRes = await fetch(
-        `https://ponflix-api.vercel.app/samehadaku/episode/${episode.episodeId}`
+        `https://ponflix-api.vercel.app/otakudesu/episode/${episode.episodeId}`
       );
       if (!episodeRes.ok) throw new Error("Failed to fetch episode details");
       const episodeData = await episodeRes.json();
@@ -111,7 +111,7 @@ export default function Stream() {
 
         if (targetServer) {
           const serverRes = await fetch(
-            `https://ponflix-api.vercel.app/samehadaku/server/${targetServer.serverId}`
+            `https://ponflix-api.vercel.app/otakudesu/server/${targetServer.serverId}`
           );
           const serverData = await serverRes.json();
 

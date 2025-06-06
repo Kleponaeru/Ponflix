@@ -18,9 +18,9 @@ export default function App() {
     const fetchData = async () => {
       try {
         const [ongoingRes, completedRes, genresRes] = await Promise.all([
-          fetch(`${apiBaseUrl}/samehadaku/ongoing?page=1`),
-          fetch(`${apiBaseUrl}/samehadaku/completed?page=1`),
-          fetch(`${apiBaseUrl}/samehadaku/genres`),
+          fetch(`${apiBaseUrl}/otakudesu/ongoing?page=1`),
+          fetch(`${apiBaseUrl}/otakudesu/completed?page=1`),
+          fetch(`${apiBaseUrl}/otakudesu/genres`),
         ]);
 
         const ongoingData = await ongoingRes.json();
@@ -48,7 +48,7 @@ export default function App() {
 
         const allGenres = genresData.data.genreList;
         const genrePromises = allGenres.map((genre) =>
-          fetch(`${apiBaseUrl}/samehadaku/genres/${genre.genreId}?page=1`)
+          fetch(`${apiBaseUrl}/otakudesu/genres/${genre.genreId}?page=1`)
             .then((res) => res.json())
             .catch((error) => {
               console.error(`Error fetching genre ${genre.title}:`, error);
@@ -70,7 +70,7 @@ export default function App() {
 
         setCategories([...baseCategories, ...genreCategories]);
       } catch (error) {
-        console.error("Error fetching samehadaku data:", error);
+        console.error("Error fetching otakudesu data:", error);
         setCategories([]);
       }
     };

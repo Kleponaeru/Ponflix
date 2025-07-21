@@ -9,6 +9,7 @@ import CompletedDetail from "./components/CompletedDetail";
 import Skeleton from "@mui/material/Skeleton";
 import Stream from "./components/pages/Stream";
 import Genres from "./components/pages/Genres";
+import MangaRows from "./components/pages/comics/MangaRows";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -117,6 +118,15 @@ export default function App() {
       <Route path="/completed" element={<CompletedDetail />} />
       <Route path="/stream/:animeId" element={<Stream />} />
       <Route path="/genres" element={<Genres />} />
+      <Route
+        path="/comics"
+        element={
+          <main className="min-h-screen bg-black text-white pt-16">
+            <Navbar />
+            <MangaRows />
+          </main>
+        }
+      />
     </Routes>
   );
 }

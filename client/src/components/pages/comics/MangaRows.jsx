@@ -11,7 +11,7 @@ export default function MangaRows() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const apiBaseUrl = "http://localhost/Comics-API";
+  const apiBaseUrl = "https://ponmics-api.infy.uk";
 
   useEffect(() => {
     const loadMangas = async () => {

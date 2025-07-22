@@ -23,7 +23,7 @@ export default function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const animeApiBaseUrl = "https://ponflix-api.vercel.app";
-  const mangaApiBaseUrl = "http://localhost/Comics-API";
+  const mangaApiBaseUrl = "https://ponmics-api.infy.uk";
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 0);

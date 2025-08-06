@@ -28,7 +28,7 @@ export default function OngoingDetail() {
   const [sortOption, setSortOption] = useState("default");
   const navigate = useNavigate();
 
-  const apiBaseUrl = "https://ponflix-api.vercel.app";
+  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
   const itemsPerPage = 15;
 
   useEffect(() => {

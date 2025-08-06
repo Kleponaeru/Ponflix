@@ -13,7 +13,7 @@ import MangaRows from "./components/pages/comics/MangaRows";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
-  const apiBaseUrl = "https://ponflix-api.vercel.app";
+  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
 
   useEffect(() => {
     const fetchData = async () => {

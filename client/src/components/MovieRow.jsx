@@ -28,7 +28,7 @@ export default function MovieRow({
   const [activeDot, setActiveDot] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const apiBaseUrl = "https://ponflix-api.vercel.app";
+  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
 
   // Fetch detailed information for each movie
   const fetchMovieDetails = async (movieList) => {

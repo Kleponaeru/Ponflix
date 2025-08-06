@@ -11,7 +11,7 @@ export default function Hero() {
   const [featuredAnime, setFeaturedAnime] = useState(null);
   const [fade, setFade] = useState(true);
   const [progressKey, setProgressKey] = useState(0);
-  const apiBaseUrl = "https://ponflix-api.vercel.app";
+  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
   const navigate = useNavigate(); // Add this hook
 
   const ANIMATION_DURATION = 8;

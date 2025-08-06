@@ -22,7 +22,7 @@ export default function Navbar() {
   const [error, setError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const animeApiBaseUrl = "https://ponflix-api.vercel.app";
+  const animeApiBaseUrl = "https://wajik-anime-api.vercel.app";
   const mangaApiBaseUrl = "https://ponmics-api.infy.uk";
 
   useEffect(() => {

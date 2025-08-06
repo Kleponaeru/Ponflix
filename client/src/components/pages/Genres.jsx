@@ -14,7 +14,7 @@ export default function Genres() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredGenres, setFilteredGenres] = useState([]);
   const navigate = useNavigate();
-  const apiBaseUrl = "https://ponflix-api.vercel.app";
+  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
 
   // Predefined color mappings for genres
   const genreColors = {

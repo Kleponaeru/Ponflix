@@ -29,7 +29,7 @@ export default function Hero() {
   useEffect(() => {
     const fetchAnimeData = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/otakudesu/ongoing?page=1`);
+        const response = await fetch(`${apiBaseUrl}/samehadaku/ongoing?page=1`);
         const data = await response.json();
         const animeList = data.data.animeList;
 

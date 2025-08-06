@@ -36,7 +36,7 @@ export default function MovieRow({
       movieList.map(async (movie) => {
         try {
           const response = await fetch(
-            `${apiBaseUrl}/otakudesu/anime/${movie.id}`
+            `${apiBaseUrl}/samehadaku/anime/${movie.id}`
           );
           const data = await response.json();
 

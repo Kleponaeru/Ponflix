@@ -47,7 +47,7 @@ export default function Navbar() {
         // Fetch anime and manga concurrently
         const [animeResponse, mangaResponse] = await Promise.all([
           fetch(
-            `${animeApiBaseUrl}/otakudesu/search?q=${encodeURIComponent(
+            `${animeApiBaseUrl}/samehadaku/search?q=${encodeURIComponent(
               searchQuery
             )}`,
             {

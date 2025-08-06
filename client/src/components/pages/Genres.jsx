@@ -43,7 +43,7 @@ export default function Genres() {
     const fetchGenres = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${apiBaseUrl}/otakudesu/genres/`);
+        const response = await fetch(`${apiBaseUrl}/samehadaku/genres/`);
         const data = await response.json();
 
         // Map API data to component format

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, JSX } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -14,24 +14,35 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Skeleton from "@mui/material/Skeleton";
+import type { Manga } from "@/types/manga";
+
+interface MangaRowProps {
+  title: string;
+  mangas: Manga[];
+  accentColor?: "red" | "blue" | "green";
+  genreId?: string;
+  isLoading?: boolean;
+}
 
 export default function MangaRow({
   title,
-  mangas = [], // Accept mangas prop
+  mangas = [],
   accentColor = "red",
   genreId,
-}) {
-  const rowRef = useRef(null);
-  const [loading, setLoading] = useState(false);
+  isLoading = false,
+}: MangaRowProps): JSX.Element | null {
+  const rowRef = useRef<HTMLDivElement | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [activeDot, setActiveDot] = useState(0);
   const navigate = useNavigate();
 
-  // Debounced scroll check
-  const debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
+  const debounce = <T extends (...args: any[]) => void>(
+    func: T,
+    wait: number
+  ): ((...args: Parameters<T>) => void) => {
+    let timeout: ReturnType<typeof setTimeout>;
+    return (...args: Parameters<T>) => {
       clearTimeout(timeout);
       timeout = setTimeout(() => func(...args), wait);
     };
@@ -73,9 +84,8 @@ export default function MangaRow({
     }
   }, [mangas, checkScroll]);
 
-  // Smooth scroll
   const handleScroll = useCallback(
-    (direction) => {
+    (direction: "left" | "right") => {
       if (rowRef.current) {
         const { scrollLeft, clientWidth, scrollWidth } = rowRef.current;
         const isOngoingOrCompleted =
@@ -85,7 +95,7 @@ export default function MangaRow({
         const targetScroll =
           direction === "left"
             ? Math.max(0, scrollLeft - scrollAmount)
-            : Math.min(scrollWidth - clientWidth, scrollAmount);
+            : Math.min(scrollWidth - clientWidth, scrollLeft + scrollAmount);
 
         rowRef.current.scrollTo({
           left: targetScroll,
@@ -104,16 +114,16 @@ export default function MangaRow({
   };
 
   const handleStreamClick = useCallback(
-    (mangaId, event) => {
-      if (event) event.stopPropagation();
+    (mangaId: string, event?: React.MouseEvent) => {
+      event?.stopPropagation();
       navigate(`/chapter/${mangaId}-chapter-1`);
     },
     [navigate]
   );
 
   const handleInfoClick = useCallback(
-    (mangaId, event) => {
-      if (event) event.stopPropagation();
+    (mangaId: string, event?: React.MouseEvent) => {
+      event?.stopPropagation();
       navigate(`/manga/${mangaId}`);
     },
     [navigate]
@@ -130,16 +140,34 @@ export default function MangaRow({
         activeButton: "bg-red-600 text-white hover:bg-red-700",
         scrollButton: "hover:bg-red-600/20",
       },
+      blue: {
+        title: "text-blue-500",
+        seeMore: "text-blue-500 hover:text-blue-600",
+        badge: "bg-blue-600",
+        hover: "text-blue-500",
+        button: "hover:text-blue-500",
+        activeButton: "bg-blue-600 text-white hover:bg-blue-700",
+        scrollButton: "hover:bg-blue-600/20",
+      },
+      green: {
+        title: "text-green-500",
+        seeMore: "text-green-500 hover:text-green-600",
+        badge: "bg-green-600",
+        hover: "text-green-500",
+        button: "hover:text-green-500",
+        activeButton: "bg-green-600 text-white hover:bg-green-700",
+        scrollButton: "hover:bg-green-600/20",
+      },
     };
     return colorMap[accentColor] || colorMap.red;
   };
 
-  const getBadgeClass = (manga) => {
+  const getBadgeClass = (manga: Manga): string => {
     if (title === "Completed Manga" || manga.status === "Completed")
       return "bg-green-600";
     if (title === "Ongoing Manga" || manga.status === "Ongoing")
       return "bg-red-600";
-    return colors.badge;
+    return getColorClasses().badge;
   };
 
   const colors = getColorClasses();
@@ -164,8 +192,8 @@ export default function MangaRow({
     },
   };
 
-  // Hide row if no mangas
-  if (mangas.length === 0 && !loading) {
+  // Only hide if not loading and no mangas
+  if (mangas.length === 0 && !isLoading) {
     return null;
   }
 
@@ -211,7 +239,38 @@ export default function MangaRow({
           className="flex items-center space-x-4 overflow-x-scroll overflow-y-hidden scrollbar-hide pb-12 will-change-scroll"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {mangas.length > 0 ? (
+          {isLoading ? (
+            // Show loading skeletons
+            <div className="flex space-x-4">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex-shrink-0"
+                  style={{
+                    width: "clamp(130px, 18vw, 220px)",
+                    height: "clamp(225px, 27vw, 360px)",
+                  }}
+                >
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height="80%"
+                    sx={{ bgcolor: "grey.900", borderRadius: "8px" }}
+                  />
+                  <Skeleton
+                    variant="text"
+                    width="80%"
+                    sx={{ bgcolor: "grey.900", mt: 1 }}
+                  />
+                  <Skeleton
+                    variant="text"
+                    width="60%"
+                    sx={{ bgcolor: "grey.900" }}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : mangas.length > 0 ? (
             <motion.div
               className="flex space-x-4"
               variants={containerVariants}
@@ -250,7 +309,9 @@ export default function MangaRow({
                               manga
                             )} text-white text-xs font-medium px-2 py-1 rounded-sm`}
                           >
-                            {manga.status === "Colored" ? "COLOR" : manga.status}
+                            {manga.status === "Colored"
+                              ? "COLOR"
+                              : manga.status}
                           </div>
                         </div>
                         <h3 className="text-white text-sm font-medium line-clamp-2">
@@ -307,11 +368,7 @@ export default function MangaRow({
                 </motion.div>
               ))}
             </motion.div>
-          ) : (
-            <div className="flex items-center justify-center w-full py-10">
-              <Loader2 className="h-10 w-10 animate-spin text-red-500" />
-            </div>
-          )}
+          ) : null}
         </div>
 
         <Button
@@ -332,7 +389,7 @@ export default function MangaRow({
         </Button>
       </div>
 
-      {!loading && mangas.length > 5 && (
+      {!isLoading && mangas.length > 5 && (
         <div className="flex justify-center gap-1 mt-2">
           {Array.from({ length: dotCount }).map((_, index) => (
             <div

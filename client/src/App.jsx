@@ -11,6 +11,8 @@ import Stream from "./components/pages/Stream";
 import Genres from "./components/pages/Genres";
 import MangaRows from "./components/pages/comics/MangaRows";
 import UnderConstruction from "./components/pages/maintenance/UnderConstruction";
+import MangaDetail from "./components/pages/comics/MangaDetail";
+import Chapter from "./components/pages/comics/Chapter";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -134,6 +136,7 @@ export default function App() {
       <Route path="/completed" element={<CompletedDetail />} />
       <Route path="/stream/:animeId" element={<Stream />} />
       <Route path="/genres" element={<Genres />} />
+      <Route path="/chapter/:chapterId" element={<Chapter />} />
     </Routes>
   );
 }

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Play, Info, Star, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import DecryptedText from "./ui/DecryptedText";
+import DecryptedText from "../ui/DecryptedText";
 import Skeleton from "@mui/material/Skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom"; // Add this import

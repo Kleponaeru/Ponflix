@@ -11,14 +11,14 @@ export default function MangaRows() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const apiBaseUrl = "https://ponmics-api.infy.uk";
+  const apiBaseUrl = "http://localhost/comics-api";
 
   useEffect(() => {
     const loadMangas = async () => {
       setLoading(true);
       try {
         const response = await fetch(`${apiBaseUrl}/api.php?latest=1&page=1`, {
-          headers: { 'Accept': 'application/json' },
+          headers: { Accept: "application/json" },
         });
         if (response.status === 429) {
           throw new Error("Rate limit exceeded. Please wait a moment.");
@@ -29,8 +29,8 @@ export default function MangaRows() {
         const data = await response.json();
         if (data.status && data.data.komik) {
           // Map data to match MangaRow's expected props
-          const mappedMangas = data.data.komik.map(manga => ({
-            id: manga.link.split('/').filter(Boolean).pop(),
+          const mappedMangas = data.data.komik.map((manga) => ({
+            id: manga.link.split("/").filter(Boolean).pop(),
             title: manga.judul,
             imageUrl: manga.gambar,
             rating: manga.rating || "N/A",
@@ -42,9 +42,15 @@ export default function MangaRows() {
           }));
 
           // Filter into separate arrays
-          const manga = mappedMangas.filter(m => m.tipe.toLowerCase() === "manga");
-          const manhwa = mappedMangas.filter(m => m.tipe.toLowerCase() === "manhwa");
-          const manhua = mappedMangas.filter(m => m.tipe.toLowerCase() === "manhua");
+          const manga = mappedMangas.filter(
+            (m) => m.tipe.toLowerCase() === "manga"
+          );
+          const manhwa = mappedMangas.filter(
+            (m) => m.tipe.toLowerCase() === "manhwa"
+          );
+          const manhua = mappedMangas.filter(
+            (m) => m.tipe.toLowerCase() === "manhua"
+          );
 
           setMangaData({ manga, manhwa, manhua });
           setError(null);
@@ -66,15 +72,45 @@ export default function MangaRows() {
       {error && <p className="text-red-500 text-center">{error}</p>}
       {loading ? (
         <>
-          <MangaRow title="Latest Manga" mangas={[]} accentColor="red" genreId="manga" />
-          <MangaRow title="Latest Manhwa" mangas={[]} accentColor="blue" genreId="manhwa" />
-          <MangaRow title="Latest Manhua" mangas={[]} accentColor="green" genreId="manhua" />
+          <MangaRow
+            title="Latest Manga"
+            mangas={[]}
+            accentColor="red"
+            genreId="manga"
+          />
+          <MangaRow
+            title="Latest Manhwa"
+            mangas={[]}
+            accentColor="blue"
+            genreId="manhwa"
+          />
+          <MangaRow
+            title="Latest Manhua"
+            mangas={[]}
+            accentColor="green"
+            genreId="manhua"
+          />
         </>
       ) : (
         <>
-          <MangaRow title="Latest Manga" mangas={mangaData.manga} accentColor="red" genreId="manga" />
-          <MangaRow title="Latest Manhwa" mangas={mangaData.manhwa} accentColor="blue" genreId="manhwa" />
-          <MangaRow title="Latest Manhua" mangas={mangaData.manhua} accentColor="green" genreId="manhua" />
+          <MangaRow
+            title="Latest Manga"
+            mangas={mangaData.manga}
+            accentColor="red"
+            genreId="manga"
+          />
+          <MangaRow
+            title="Latest Manhwa"
+            mangas={mangaData.manhwa}
+            accentColor="blue"
+            genreId="manhwa"
+          />
+          <MangaRow
+            title="Latest Manhua"
+            mangas={mangaData.manhua}
+            accentColor="green"
+            genreId="manhua"
+          />
         </>
       )}
     </div>

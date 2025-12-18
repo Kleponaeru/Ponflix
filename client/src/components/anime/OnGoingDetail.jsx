@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import Navbar from "./ui/Navbar";
+import Navbar from "../ui/Navbar";
 import Skeleton from "@mui/material/Skeleton";
 import { motion } from "framer-motion";
 

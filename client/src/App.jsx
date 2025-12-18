@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Hero from "./components/Hero";
-import MovieRow from "./components/MovieRow";
+import Hero from "./components/anime/Hero";
+import MovieRow from "./components/anime/MovieRow";
 import Navbar from "./components/ui/Navbar";
-import DetailGenre from "./components/DetailGenre";
-import OngoingDetail from "./components/OnGoingDetail";
-import CompletedDetail from "./components/CompletedDetail";
+import DetailGenre from "./components/anime/DetailGenre";
+import OngoingDetail from "./components/anime/OnGoingDetail";
+import CompletedDetail from "./components/anime/CompletedDetail";
 import Skeleton from "@mui/material/Skeleton";
 import Stream from "./components/pages/Stream";
 import Genres from "./components/pages/Genres";

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -176,15 +176,31 @@ export default function Navbar() {
             <img src="/ponflix-logo.png" alt="" height={80} width={80} />
           </Link>
           <div className="hidden md:flex ml-8 gap-6">
-            <Link to="/" className="text-white hover:text-gray-300">
+            <NavLink
+              to="/comics"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-red-500 font-semibold"
+                  : "text-white hover:text-gray-300"
+              }
+            >
+              Comics
+            </NavLink>
+
+            <NavLink
+              to="/anime"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-red-500 font-semibold"
+                  : "text-white hover:text-gray-300"
+              }
+            >
               Anime
-            </Link>
+            </NavLink>
+
             {/* <Link to="/genres" className="text-white hover:text-gray-300">
               Genres
             </Link> */}
-            <Link to="/comics" className="text-white hover:text-gray-300">
-              Comics
-            </Link>
           </div>
         </div>
 
@@ -298,15 +314,15 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-black/95 py-4 px-4">
           <div className="flex flex-col space-y-4">
-            <Link to="/" className="text-white hover:text-gray-300">
-              Home
-            </Link>
-            <Link to="/genres" className="text-white hover:text-gray-300">
-              Genres
-            </Link>
-            <Link to="/comics" className="text-white hover:text-gray-300">
+            <NavLink to="/comics" className="text-white hover:text-gray-300">
               Comics
-            </Link>
+            </NavLink>
+            <NavLink to="/anime" className="text-white hover:text-gray-300">
+              Anime
+            </NavLink>
+            {/* <Link to="/genres" className="text-white hover:text-gray-300">
+              Genres
+            </Link> */}
           </div>
         </div>
       )}

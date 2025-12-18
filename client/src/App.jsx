@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Hero from "./components/Hero";
 import MovieRow from "./components/MovieRow";
 import Navbar from "./components/ui/Navbar";
@@ -81,14 +81,28 @@ export default function App() {
 
   return (
     <Routes>
+      {/* Redirect root to comics */}
+      <Route path="/" element={<Navigate to="/comics" replace />} />
+
+      {/* Comics homepage */}
       <Route
-        path="/"
+        path="/comics"
+        element={
+          <main className="min-h-screen bg-black text-white pt-16">
+            <Navbar />
+            <MangaRows />
+          </main>
+        }
+      />
+
+      {/* Anime pages */}
+      <Route
+        path="/anime"
         element={
           <main className="min-h-screen bg-black text-white pt-16">
             <Navbar />
             <Hero />
             <div className="relative z-10 pb-10">
-              {/* Show Skeleton Immediately */}
               {categories.length === 0 &&
                 [...Array(3)].map((_, index) => (
                   <MovieRow
@@ -99,7 +113,6 @@ export default function App() {
                   />
                 ))}
 
-              {/* Replace Skeleton with Real Data Once categories Load */}
               {categories.length > 0 &&
                 categories.map((category) => (
                   <MovieRow
@@ -113,20 +126,12 @@ export default function App() {
           </main>
         }
       />
+
       <Route path="/genres/:genreId" element={<DetailGenre />} />
       <Route path="/ongoing" element={<OngoingDetail />} />
       <Route path="/completed" element={<CompletedDetail />} />
       <Route path="/stream/:animeId" element={<Stream />} />
       <Route path="/genres" element={<Genres />} />
-      <Route
-        path="/comics"
-        element={
-          <main className="min-h-screen bg-black text-white pt-16">
-            <Navbar />
-            <MangaRows />
-          </main>
-        }
-      />
     </Routes>
   );
 }

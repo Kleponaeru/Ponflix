@@ -180,8 +180,8 @@ export default function Navbar() {
               to="/comics"
               className={({ isActive }) =>
                 isActive
-                  ? "text-red-500 font-semibold"
-                  : "text-white hover:text-gray-300"
+                  ? "text-white-50 font-semibold"
+                  : "text-gray-400 hover:text-gray-300"
               }
             >
               Comics
@@ -191,8 +191,8 @@ export default function Navbar() {
               to="/anime"
               className={({ isActive }) =>
                 isActive
-                  ? "text-red-500 font-semibold"
-                  : "text-white hover:text-gray-300"
+                  ? "text-white-50 font-semibold"
+                  : "text-gray-400 hover:text-gray-300"
               }
             >
               Anime
@@ -314,10 +314,24 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-black/95 py-4 px-4">
           <div className="flex flex-col space-y-4">
-            <NavLink to="/comics" className="text-white hover:text-gray-300">
+            <NavLink
+              to="/comics"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-white-50 font-semibold"
+                  : "text-gray-400 hover:text-gray-300"
+              }
+            >
               Comics
             </NavLink>
-            <NavLink to="/anime" className="text-white hover:text-gray-300">
+            <NavLink
+              to="/anime"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-white-50 font-semibold"
+                  : "text-gray-400 hover:text-gray-300"
+              }
+            >
               Anime
             </NavLink>
             {/* <Link to="/genres" className="text-white hover:text-gray-300">

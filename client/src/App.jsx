@@ -10,6 +10,7 @@ import Skeleton from "@mui/material/Skeleton";
 import Stream from "./components/pages/Stream";
 import Genres from "./components/pages/Genres";
 import MangaRows from "./components/pages/comics/MangaRows";
+import UnderConstruction from "./components/pages/maintenance/UnderConstruction";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -101,7 +102,8 @@ export default function App() {
         element={
           <main className="min-h-screen bg-black text-white pt-16">
             <Navbar />
-            <Hero />
+            <UnderConstruction />
+            {/* <Hero />
             <div className="relative z-10 pb-10">
               {categories.length === 0 &&
                 [...Array(3)].map((_, index) => (
@@ -122,7 +124,7 @@ export default function App() {
                     genreId={category.genreId}
                   />
                 ))}
-            </div>
+            </div> */}
           </main>
         }
       />

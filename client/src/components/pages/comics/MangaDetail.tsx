@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { JSX, useEffect, useState } from "react";
 import { Loader2, Star, Calendar } from "lucide-react";
 import type { Manga } from "@/types/manga";
+import { mapMangaDetail } from "@/lib/mappers/manga";
 
 export default function MangaDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -18,10 +19,10 @@ export default function MangaDetail(): JSX.Element {
     async function fetchManga() {
       try {
         const res = await fetch(
-          `http://localhost/Comics-API/api.php?manga=${id}`
+          `http://localhost/Comics-API/api.php?komik=${id}`
         );
         const json = await res.json();
-        setManga(json.data as Manga);
+        setManga(mapMangaDetail(json.data));
       } catch (error) {
         console.error(error);
       } finally {
@@ -77,7 +78,7 @@ export default function MangaDetail(): JSX.Element {
           </p>
 
           <button
-            onClick={() => navigate(`/chapter/${manga.id}-chapter-1`)}
+            onClick={() => navigate(`/manga/${manga.id}/chapter/1`)}
             className="mt-4 px-5 py-2 rounded bg-red-600 hover:bg-red-700 transition"
           >
             Read First Chapter

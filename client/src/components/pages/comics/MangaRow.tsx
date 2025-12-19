@@ -116,7 +116,7 @@ export default function MangaRow({
   const handleStreamClick = useCallback(
     (mangaId: string, event?: React.MouseEvent) => {
       event?.stopPropagation();
-      navigate(`/chapter/${mangaId}-chapter-1`);
+      navigate(`/manga/${mangaId}/chapter/1`);
     },
     [navigate]
   );
@@ -289,7 +289,7 @@ export default function MangaRow({
                 >
                   <div
                     className="w-full h-4/5 overflow-hidden rounded-lg bg-gray-800 relative cursor-pointer"
-                    onClick={() => handleStreamClick(manga.id)}
+                    onClick={() => handleInfoClick(manga.id)}
                   >
                     <img
                       src={manga.imageUrl || "/placeholder.svg"}

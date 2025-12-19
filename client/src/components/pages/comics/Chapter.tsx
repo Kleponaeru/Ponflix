@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import MangaDetail from "./MangaDetail";
 
 export default function Chapter() {
-  const { chapterId } = useParams<{ chapterId: string }>();
+  const { id, chapterId } = useParams<{ id: string; chapterId: string }>();
 
   return (
     <>
@@ -13,7 +13,6 @@ export default function Chapter() {
 
         <p className="px-6 text-gray-400 mt-2">Chapter reader will go here.</p>
       </main>
-      <MangaDetail />
     </>
   );
 }

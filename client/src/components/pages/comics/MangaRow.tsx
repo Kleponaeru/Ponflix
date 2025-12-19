@@ -117,7 +117,7 @@ export default function MangaRow({
   const handleStreamClick = useCallback(
     (mangaId: string, event?: React.MouseEvent) => {
       event?.stopPropagation();
-      navigate(`/manga/${mangaId}/chapter/1`);
+      navigate(`/comics/${mangaId}/chapter/1`);
     },
     [navigate]
   );
@@ -125,7 +125,7 @@ export default function MangaRow({
   const handleInfoClick = useCallback(
     (mangaId: string, event?: React.MouseEvent) => {
       event?.stopPropagation();
-      navigate(`/manga/${mangaId}`);
+      navigate(`/comics/${mangaId}`);
     },
     [navigate]
   );

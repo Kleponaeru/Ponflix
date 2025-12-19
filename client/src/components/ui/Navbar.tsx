@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useMatch } from "react-router-dom";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -24,6 +24,9 @@ export default function Navbar() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const animeApiBaseUrl = "https://wajik-anime-api.vercel.app";
   const mangaApiBaseUrl = "https://ponmics-api.infy.uk";
+
+  const isComicsActive = !!useMatch("/comics/*");
+  const isAnimeActive = !!useMatch("/anime/*");
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 0);
@@ -178,9 +181,9 @@ export default function Navbar() {
           <div className="hidden md:flex ml-8 gap-6">
             <NavLink
               to="/comics"
-              className={({ isActive }) =>
-                isActive
-                  ? "text-white-50 font-semibold"
+              className={() =>
+                isComicsActive
+                  ? "text-white font-semibold"
                   : "text-gray-400 hover:text-gray-300"
               }
             >
@@ -189,9 +192,9 @@ export default function Navbar() {
 
             <NavLink
               to="/anime"
-              className={({ isActive }) =>
-                isActive
-                  ? "text-white-50 font-semibold"
+              className={() =>
+                isAnimeActive
+                  ? "text-white font-semibold"
                   : "text-gray-400 hover:text-gray-300"
               }
             >

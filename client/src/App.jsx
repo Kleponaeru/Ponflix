@@ -134,7 +134,7 @@ export default function App() {
       <Route path="/stream/:animeId" element={<Stream />} />
       <Route path="/genres" element={<Genres />} />
       <Route
-        path="/manga/:id"
+        path="/comics/:id"
         element={
           <main className="min-h-screen bg-black text-white pt-16">
             <Navbar />
@@ -142,7 +142,7 @@ export default function App() {
           </main>
         }
       />
-      <Route path="/manga/:id/chapter/:chapterId" element={<Chapter />} />
+      <Route path="/comics/:id/chapter/:chapterId" element={<Chapter />} />
     </Routes>
   );
 }

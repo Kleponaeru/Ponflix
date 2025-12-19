@@ -13,6 +13,7 @@ import MangaRows from "./components/pages/comics/MangaRows";
 import UnderConstruction from "./components/pages/maintenance/UnderConstruction";
 import MangaDetail from "./components/pages/comics/MangaDetail";
 import Chapter from "./components/pages/comics/Chapter";
+import ChapterReader from "./components/pages/comics/ChapterReader";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -142,7 +143,10 @@ export default function App() {
           </main>
         }
       />
-      <Route path="/comics/:id/chapter/:chapterId" element={<Chapter />} />
+      <Route
+        path="/comics/:id/chapter/:chapterId"
+        element={<ChapterReader />}
+      />
     </Routes>
   );
 }

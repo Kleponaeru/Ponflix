@@ -181,7 +181,7 @@ export default function MangaDetail(): JSX.Element {
             {manga.chapters.map((c) => (
               <button
                 key={c.slug}
-                onClick={() => navigate(`/chapter${c.slug}`)}
+                onClick={() => navigate(`/comics/${id}/chapter${c.slug}`)}
                 className="w-full flex justify-between items-center px-4 py-3 bg-gray-900 rounded hover:bg-red-600 transition"
               >
                 <span>{c.title}</span>

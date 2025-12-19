@@ -15,10 +15,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Skeleton from "@mui/material/Skeleton";
 import type { Manga } from "@/types/manga";
+import { MangaListItem } from "@/types/manga-list";
 
 interface MangaRowProps {
   title: string;
-  mangas: Manga[];
+  mangas: MangaListItem[];
   accentColor?: "red" | "blue" | "green";
   genreId?: string;
   isLoading?: boolean;
@@ -297,21 +298,15 @@ export default function MangaRow({
                       className="object-cover w-full h-full transition-transform duration-300 hover:scale-105 will-change-transform"
                       loading="lazy"
                     />
-                    <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center">
+                    {/* <div className="absolute top-2 right-2 bg-black/70 text-yellow-400 text-xs font-bold px-2 py-1 rounded flex items-center">
                       <Star className="w-3 h-3 mr-1 fill-current" />
-                      {manga.rating}
-                    </div>
+                      {manga.rating ?? "N/A"}
+                    </div> */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                       <div className="flex flex-col gap-2">
                         <div className="flex justify-between items-start">
-                          <div
-                            className={`${getBadgeClass(
-                              manga
-                            )} text-white text-xs font-medium px-2 py-1 rounded-sm`}
-                          >
-                            {manga.status === "Colored"
-                              ? "COLOR"
-                              : manga.status}
+                          <div className="bg-red-600 text-white text-xs font-medium px-2 py-1 rounded-sm">
+                            {manga.isColored ? "COLOR" : "B&W"}
                           </div>
                         </div>
                         <h3 className="text-white text-sm font-medium line-clamp-2">
@@ -351,18 +346,20 @@ export default function MangaRow({
                         ? `${manga.title.substring(0, 25)}...`
                         : manga.title}
                     </h3>
+
                     <div className="flex flex-wrap justify-between items-center mt-1 w-full">
                       <div className="flex items-center text-xs text-gray-400">
                         <Calendar className="h-3 w-3 mr-1 text-gray-500" />
-                        <span>{manga.year}</span>
-                        <span className="mx-1">•</span>
-                        <span>{manga.episodes} Ch</span>
+
+                        <span>{manga.type}</span>
+
+                        {manga.latestChapter && (
+                          <>
+                            <span className="mx-1">•</span>
+                            <span>{manga.latestChapter.title}</span>
+                          </>
+                        )}
                       </div>
-                      {manga.genre && (
-                        <span className="text-xs px-2 py-0.5 bg-gray-800 rounded-full text-gray-300 mt-1 sm:mt-0">
-                          {manga.genre}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </motion.div>

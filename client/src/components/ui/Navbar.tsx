@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useMatch } from "react-router-dom";
 import { ChevronDown, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { titleFromLink } from "@/lib/manga-utils";
 
 interface SearchResult {
   id: string;
@@ -23,7 +24,7 @@ export default function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const animeApiBaseUrl = "https://wajik-anime-api.vercel.app";
-  const mangaApiBaseUrl = "https://ponmics-api.infy.uk";
+  const mangaApiBaseUrl = "http://localhost/Comics-Api";
 
   const isComicsActive = !!useMatch("/comics/*");
   const isAnimeActive = !!useMatch("/anime/*");
@@ -47,86 +48,81 @@ export default function Navbar() {
 
     const debounceTimeout = setTimeout(async () => {
       try {
-        // Fetch anime and manga concurrently
-        const [animeResponse, mangaResponse] = await Promise.all([
-          fetch(
-            `${animeApiBaseUrl}/samehadaku/search?q=${encodeURIComponent(
-              searchQuery
-            )}`,
-            {
-              headers: { Accept: "application/json" },
-            }
-          ).catch(() => null),
-          fetch(
-            `${mangaApiBaseUrl}/api.php?s=${encodeURIComponent(
-              searchQuery
-            )}&page=1`,
-            {
-              headers: { Accept: "application/json" },
-            }
-          ).catch(() => null),
-        ]);
+        // ===============================
+        // ANIME SEARCH (DISABLED - API BROKEN)
+        // ===============================
+        // const animeResponse = await fetch(
+        //   `${animeApiBaseUrl}/samehadaku/search?q=${encodeURIComponent(searchQuery)}`,
+        //   { headers: { Accept: "application/json" } }
+        // );
 
-        let animeResults: SearchResult[] = [];
+        // let animeResults: SearchResult[] = [];
+
+        // if (animeResponse.ok) {
+        //   const animeData = await animeResponse.json();
+        //   if (animeData.ok && animeData.data?.animeList) {
+        //     animeResults = animeData.data.animeList.map((anime: any) => ({
+        //       id: anime.animeId,
+        //       title: anime.title,
+        //       image: anime.poster || "/fallback-image.jpg",
+        //       type: "Anime",
+        //       rating: anime.score || "N/A",
+        //       link: `/stream/${anime.animeId}`,
+        //     }));
+        //   }
+        // }
+
+        // ===============================
+        // MANGA SEARCH (ACTIVE)
+        // ===============================
+        const mangaResponse = await fetch(
+          `${mangaApiBaseUrl}/api.php?s=${encodeURIComponent(
+            searchQuery
+          )}&page=1`,
+          { headers: { Accept: "application/json" } }
+        );
+
         let mangaResults: SearchResult[] = [];
 
-        // Process anime results
-        if (animeResponse && animeResponse.ok) {
-          const animeData = await animeResponse.json();
-          if (animeData.ok && animeData.data?.animeList) {
-            animeResults = animeData.data.animeList
-              .slice(0, 3)
-              .map((anime: any) => ({
-                id: anime.animeId,
-                title: anime.title,
-                image: anime.poster || "/fallback-image.jpg",
-                type: "Anime" as const,
-                rating: anime.score || "N/A",
-                link: `/stream/${anime.animeId}`,
-              }));
-          }
-        }
+        if (mangaResponse.ok) {
+          const mangaData = await mangaResponse.json();
 
-        // Process manga results
-        if (mangaResponse && mangaResponse.ok) {
-          if (mangaResponse.status === 429) {
-            setError(
-              "Rate limit exceeded for manga search. Please wait a moment."
-            );
-          } else {
-            const mangaData = await mangaResponse.json();
-            if (mangaData.status && mangaData.data?.komik) {
-              mangaResults = mangaData.data.komik
-                .slice(0, 2)
-                .map((manga: any) => ({
-                  id: manga.link.split("/").filter(Boolean).pop(),
-                  title: manga.judul,
+          // ✅ FIX: komik is inside data.komik
+          if (mangaData.status && Array.isArray(mangaData.data?.komik)) {
+            mangaResults = mangaData.data.komik
+              .slice(0, 5)
+              .map((manga: any) => {
+                const id = manga.link.split("/").filter(Boolean).pop();
+                const rawTitle = manga.judul;
+                const fallbackTitle = titleFromLink(manga.link);
+
+                return {
+                  id,
+                  title:
+                    rawTitle && rawTitle !== "Tidak ada judul"
+                      ? rawTitle
+                      : fallbackTitle,
                   image: manga.gambar || "/fallback-image.jpg",
-                  type: "Manga" as const,
+                  type: "Manga",
                   rating: manga.rating || "N/A",
-                  link: `/manga/${manga.link.split("/").filter(Boolean).pop()}`,
-                }));
-            }
+                  link: `/comics/${id}`,
+                };
+              });
           }
         }
 
-        // Combine and limit to 5 results
-        const combinedResults = [...animeResults, ...mangaResults].slice(0, 5);
-        setSearchResults(combinedResults);
-        if (combinedResults.length === 0) {
+        setSearchResults(mangaResults);
+
+        if (mangaResults.length === 0) {
           setError(`No results found for "${searchQuery}"`);
         }
       } catch (error) {
-        if (error instanceof Error) {
-          setError(`Search failed: ${error.message}`);
-        } else {
-          setError("Search failed: Unknown error");
-        }
+        setError("Search failed. Please try again.");
         setSearchResults([]);
       } finally {
         setIsLoading(false);
       }
-    }, 500); // Debounce delay of 500ms
+    }, 500);
 
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery]);

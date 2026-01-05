@@ -114,7 +114,7 @@ export default function MangaDetail(): JSX.Element {
           )}
 
           {/* Description */}
-          <p className="text-gray-300 leading-relaxed">
+          <p className="text-gray-300 leading-relaxed text-justify">
             {manga.description || "No description available."}
           </p>
 

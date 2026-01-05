@@ -127,7 +127,7 @@ export default function MangaHeroBanner({
 
   const handleReadNow = () => {
     if (mangas[currentIndex]) {
-      window.location.href = `/comics/${mangas[currentIndex].id}/chapter/1`;
+      window.location.href = `/comics/${mangas[currentIndex].id}/chapter/${mangas[currentIndex].id}-chapter-1`;
     }
   };
 
@@ -140,7 +140,7 @@ export default function MangaHeroBanner({
   // Loading state
   if (isLoading) {
     return (
-      <div className="relative w-full h-[400px] md:h-[600px] bg-gradient-to-b from-gray-900 to-black">
+      <div className="relative w-full h-[500px] md:h-[600px] bg-gradient-to-b from-gray-900 to-black">
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
           <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
           <p className="text-gray-400 text-lg">Loading featured manga...</p>
@@ -152,7 +152,7 @@ export default function MangaHeroBanner({
   // Error state
   if (error || mangas.length === 0) {
     return (
-      <div className="relative w-full h-[400px] md:h-[600px] bg-gradient-to-b from-gray-900 to-black">
+      <div className="relative w-full h-[500px] md:h-[600px] bg-gradient-to-b from-gray-900 to-black">
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
           <div className="text-red-500 text-lg">
             {error || "No featured manga available"}
@@ -173,7 +173,7 @@ export default function MangaHeroBanner({
 
   return (
     <div
-      className="relative w-full h-[400px] md:h-[600px] overflow-hidden group"
+      className="relative w-full h-[500px] md:h-[600px] overflow-hidden group"
       onMouseEnter={() => setIsAutoPlaying(false)}
       onMouseLeave={() => setIsAutoPlaying(true)}
     >
@@ -211,7 +211,7 @@ export default function MangaHeroBanner({
           <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-red-600/20 to-blue-600/20 opacity-30 animate-pulse"></div>
 
           {/* Content Container */}
-          <div className="absolute inset-0 flex items-center px-4 md:px-16 lg:px-24">
+          <div className="absolute inset-0 flex items-center px-4 md:px-16 lg:px-24 z-10">
             <motion.div
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -300,14 +300,14 @@ export default function MangaHeroBanner({
               )}
 
               {/* Description */}
-              <motion.p
+              {/* <motion.p
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.5 }}
                 className="text-sm md:text-lg text-gray-200 leading-relaxed line-clamp-2 md:line-clamp-3 drop-shadow-lg max-w-xl"
               >
                 {currentManga.description}
-              </motion.p>
+              </motion.p> */}
 
               {/* Action Buttons */}
               <motion.div
@@ -318,17 +318,17 @@ export default function MangaHeroBanner({
               >
                 <Button
                   onClick={handleReadNow}
-                  className="bg-white hover:bg-gray-100 text-black font-bold px-6 md:px-8 py-5 md:py-6 rounded-lg text-base md:text-lg shadow-2xl hover:shadow-white/20 hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                  className="bg-white hover:bg-gray-100 text-black font-bold px-6 md:px-8 py-4 md:py-6 rounded-lg text-sm md:text-lg shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl hover:shadow-white/10 md:hover:scale-105 transition-all duration-300 flex items-center gap-2 touch-manipulation"
                 >
-                  <Play className="w-5 h-5 fill-current" />
+                  <Play className="w-4 h-4 md:w-5 md:h-5 fill-current" />
                   Read Now
                 </Button>
                 <Button
                   onClick={handleMoreInfo}
                   variant="outline"
-                  className="bg-white/10 backdrop-blur-md border-2 border-white/30 hover:bg-white/20 text-white font-bold px-6 md:px-8 py-5 md:py-6 rounded-lg text-base md:text-lg shadow-xl hover:scale-105 transition-all duration-300 flex items-center gap-2"
+                  className="bg-white/10 backdrop-blur-md border-2 border-white/30 hover:bg-white/20 text-white font-bold px-6 md:px-8 py-4 md:py-6 rounded-lg text-sm md:text-lg shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-xl md:hover:scale-105 transition-all duration-300 flex items-center gap-2 touch-manipulation"
                 >
-                  <Info className="w-5 h-5" />
+                  <Info className="w-4 h-4 md:w-5 md:h-5" />
                   More Info
                 </Button>
               </motion.div>

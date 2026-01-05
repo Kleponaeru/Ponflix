@@ -37,11 +37,11 @@ export default function ChapterReader(): JSX.Element {
     async function fetchChapter() {
       try {
         const chapterRes = await fetch(
-          `http://localhost/Comics-API/api.php?chapter=${chapterId}`
+          `https://ponmics-api.necode.id/Comics-API/api.php?chapter=${chapterId}`
         );
         const chapterJson = await chapterRes.json();
 
-        console.log("Full API Response:", chapterJson);
+        // console.log("Full API Response:", chapterJson);
 
         if (!chapterJson.status || !chapterJson.data) {
           console.error("Invalid API response");
@@ -55,8 +55,8 @@ export default function ChapterReader(): JSX.Element {
           chapterJson.data.gambar.length > 0
             ? chapterJson.data.gambar.map((img: any) => img.url)
             : [];
-        console.log("Extracted images count:", images.length);
-        console.log("First image URL:", images[0]);
+        // console.log("Extracted images count:", images.length);
+        // console.log("First image URL:", images[0]);
 
         const chapterData: ChapterData = {
           slug: `/${id}-chapter-${chapterId}/`,
@@ -78,7 +78,7 @@ export default function ChapterReader(): JSX.Element {
           mangaTitle: data.info_komik?.judul || "Unknown Manga",
         };
 
-        console.log("Setting chapter data:", chapterData);
+        // console.log("Setting chapter data:", chapterData);
         setChapter(chapterData);
       } catch (error) {
         console.error("Fetch error:", error);

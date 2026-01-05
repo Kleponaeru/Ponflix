@@ -158,7 +158,7 @@ export default function Navbar() {
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Searching for:", searchQuery);
+    // console.log("Searching for:", searchQuery);
   };
 
   return (

@@ -5,6 +5,7 @@ import { JSX, useEffect, useState } from "react";
 import { Loader2, Star, Calendar } from "lucide-react";
 import type { Manga } from "@/types/manga";
 import { mapMangaDetail } from "@/lib/mappers/manga";
+import { parseIndoTimeAgo } from "@/utils/timeAgo";
 
 export default function MangaDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +20,7 @@ export default function MangaDetail(): JSX.Element {
     async function fetchManga() {
       try {
         const res = await fetch(
-          `http://localhost/Comics-API/api.php?komik=${id}`
+          `https://ponmics-api.necode.id/Comics-API/api.php?komik=${id}`
         );
         const json = await res.json();
         setManga(mapMangaDetail(json.data));
@@ -54,7 +55,7 @@ export default function MangaDetail(): JSX.Element {
         <img
           src={manga.imageUrl}
           alt={manga.title}
-          className="w-60 h-auto rounded-lg shadow-lg self-start"
+          className="w-60 h-auto rounded-lg shadow-lg mx-auto md:mx-0 md:self-start"
         />
 
         {/* Info */}
@@ -132,11 +133,13 @@ export default function MangaDetail(): JSX.Element {
           )}
 
           {/* Action buttons */}
-          <div className="flex flex-wrap gap-4 pt-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-2">
             {manga.firstChapter && (
               <button
                 onClick={() => navigate(`/chapter${manga.firstChapter?.slug}`)}
-                className="gap-3 px-5 py-2 group relative inline-flex items-center bg-white text-black rounded-md overflow-hidden transition-all duration-300 hover:bg-red-600 hover:text-white hover:scale-105"
+                className="w-full sm:w-auto gap-3 px-5 py-2 group relative inline-flex items-center justify-center
+                 bg-white text-black rounded-md overflow-hidden transition-all duration-300
+                 hover:bg-red-600 hover:text-white hover:scale-105"
               >
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                 Read First Chapter
@@ -146,7 +149,8 @@ export default function MangaDetail(): JSX.Element {
             {manga.latestChapter && (
               <button
                 onClick={() => navigate(`/chapter${manga.latestChapter?.slug}`)}
-                className="px-5 py-2 border border-gray-600 rounded-md hover:border-red-600 hover:text-red-500 transition"
+                className="w-full sm:w-auto px-5 py-2 border border-gray-600 rounded-md
+                 hover:border-red-600 hover:text-red-500 transition text-center"
               >
                 Latest Chapter
               </button>
@@ -156,7 +160,7 @@ export default function MangaDetail(): JSX.Element {
       </div>
 
       {/* Spoiler preview */}
-      {manga.spoilerImages.length > 0 && (
+      {/* {manga.spoilerImages.length > 0 && (
         <div className="mt-14">
           <h2 className="text-xl font-bold mb-4">Preview</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -170,7 +174,7 @@ export default function MangaDetail(): JSX.Element {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Chapter list */}
       {manga.chapters.length > 0 && (
@@ -185,7 +189,9 @@ export default function MangaDetail(): JSX.Element {
                 className="w-full flex justify-between items-center px-4 py-3 bg-gray-900 rounded hover:bg-red-600 transition"
               >
                 <span>{c.title}</span>
-                <span className="text-sm text-gray-400">{c.releasedAt}</span>
+                <span className="text-sm text-gray-400">
+                  {parseIndoTimeAgo(c.releasedAt)}
+                </span>
               </button>
             ))}
           </div>

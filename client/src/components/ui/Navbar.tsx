@@ -24,7 +24,7 @@ export default function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const animeApiBaseUrl = "https://wajik-anime-api.vercel.app";
-  const mangaApiBaseUrl = "http://localhost/Comics-Api";
+  const mangaApiBaseUrl = "https://ponmics-api.necode.id/Comics-API/";
 
   const isComicsActive = !!useMatch("/comics/*");
   const isAnimeActive = !!useMatch("/anime/*");

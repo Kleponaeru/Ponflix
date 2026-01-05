@@ -5,6 +5,7 @@ import MangaRow from "./MangaRow";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { MangaListItem } from "@/types/manga-list";
 import { mapMangaList } from "@/lib/mappers/manga-list";
+import MangaHeroBanner from "./BannerManga";
 
 type MangaData = {
   manga: MangaListItem[];
@@ -22,7 +23,7 @@ export default function MangaRows(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const apiBaseUrl = "http://localhost/comics-api";
+  const apiBaseUrl = "https://ponmics-api.necode.id/Comics-API/";
 
   const loadMangas = async (): Promise<void> => {
     setLoading(true);
@@ -92,30 +93,37 @@ export default function MangaRows(): JSX.Element {
 
   // ✅ NORMAL UI
   return (
-    <div className="py-6 px-4 md:px-12">
-      <MangaRow
-        title="Latest Manga"
-        mangas={mangaData.manga}
-        accentColor="red"
-        genreId="manga"
-        isLoading={loading}
-      />
+    <>
+      <MangaHeroBanner
+        apiUrl={`${apiBaseUrl}/api.php`}
+        autoPlayInterval={5000}
+        maxItems={5}
+      />{" "}
+      <div className="py-6 px-4 md:px-12">
+        <MangaRow
+          title="Latest Manga"
+          mangas={mangaData.manga}
+          accentColor="red"
+          genreId="manga"
+          isLoading={loading}
+        />
 
-      <MangaRow
-        title="Latest Manhwa"
-        mangas={mangaData.manhwa}
-        accentColor="red"
-        genreId="manhwa"
-        isLoading={loading}
-      />
+        <MangaRow
+          title="Latest Manhwa"
+          mangas={mangaData.manhwa}
+          accentColor="red"
+          genreId="manhwa"
+          isLoading={loading}
+        />
 
-      <MangaRow
-        title="Latest Manhua"
-        mangas={mangaData.manhua}
-        accentColor="red"
-        genreId="manhua"
-        isLoading={loading}
-      />
-    </div>
+        <MangaRow
+          title="Latest Manhua"
+          mangas={mangaData.manhua}
+          accentColor="red"
+          genreId="manhua"
+          isLoading={loading}
+        />
+      </div>
+    </>
   );
 }

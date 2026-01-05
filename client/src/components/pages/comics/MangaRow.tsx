@@ -19,7 +19,6 @@ import { motion } from "framer-motion";
 import Skeleton from "@mui/material/Skeleton";
 import type { Manga } from "@/types/manga";
 import { MangaListItem } from "@/types/manga-list";
-import MangaHeroBanner from "./BannerManga";
 
 interface MangaRowProps {
   title: string;
@@ -114,7 +113,7 @@ export default function MangaRow({
   const getDetailLink = () => {
     if (title === "Ongoing Manga") return "/ongoing";
     if (title === "Completed Manga") return "/completed";
-    if (genreId) return `/genres/${genreId}`;
+    if (genreId) return `/comics/category/${genreId}`;
     return "#";
   };
 

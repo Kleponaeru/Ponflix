@@ -14,6 +14,7 @@ import UnderConstruction from "./components/pages/maintenance/UnderConstruction"
 import MangaDetail from "./components/pages/comics/MangaDetail";
 import Chapter from "./components/pages/comics/Chapter";
 import ChapterReader from "./components/pages/comics/ChapterReader";
+import CategoriesManga from "./components/pages/comics/detail/CategoriesManga";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
@@ -134,6 +135,7 @@ export default function App() {
       <Route path="/completed" element={<CompletedDetail />} />
       <Route path="/stream/:animeId" element={<Stream />} />
       <Route path="/genres" element={<Genres />} />
+      <Route path="/comics/category/:type" element={<CategoriesManga />} />
       <Route
         path="/comics/:id"
         element={

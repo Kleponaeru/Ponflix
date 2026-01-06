@@ -6,7 +6,6 @@ import Navbar from "./components/ui/Navbar";
 import DetailGenre from "./components/anime/DetailGenre";
 import OngoingDetail from "./components/anime/OnGoingDetail";
 import CompletedDetail from "./components/anime/CompletedDetail";
-import Skeleton from "@mui/material/Skeleton";
 import Stream from "./components/pages/Stream";
 import Genres from "./components/pages/Genres";
 import MangaRows from "./components/comics/MangaRows";

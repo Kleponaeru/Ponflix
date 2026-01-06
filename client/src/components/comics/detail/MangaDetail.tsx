@@ -136,7 +136,9 @@ export default function MangaDetail(): JSX.Element {
           <div className="flex flex-col sm:flex-row flex-wrap gap-4 pt-2">
             {manga.firstChapter && (
               <button
-                onClick={() => navigate(`/chapter${manga.firstChapter?.slug}`)}
+                onClick={() =>
+                  navigate(`/comics/${id}/chapter/${manga.firstChapter?.slug}`)
+                }
                 className="w-full sm:w-auto gap-3 px-5 py-2 group relative inline-flex items-center justify-center
                  bg-white text-black rounded-md overflow-hidden transition-all duration-300
                  hover:bg-red-600 hover:text-white hover:scale-105"
@@ -148,7 +150,9 @@ export default function MangaDetail(): JSX.Element {
 
             {manga.latestChapter && (
               <button
-                onClick={() => navigate(`/chapter${manga.latestChapter?.slug}`)}
+                onClick={() =>
+                  navigate(`/comics/${id}/chapter/${manga.latestChapter?.slug}`)
+                }
                 className="w-full sm:w-auto px-5 py-2 border border-gray-600 rounded-md
                  hover:border-red-600 hover:text-red-500 transition text-center"
               >

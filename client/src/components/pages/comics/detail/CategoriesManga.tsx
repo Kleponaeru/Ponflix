@@ -13,6 +13,9 @@ import { Button } from "@/components/ui/button";
 import Navbar from "../../../ui/Navbar";
 import Skeleton from "@mui/material/Skeleton";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
+import { MangaListItem } from "@/types/manga-list";
+import { fetchMangaByType } from "@/services/mangaService";
 import { normalizeTitle } from "@/utils/title";
 
 interface Manga {
@@ -28,19 +31,47 @@ interface Manga {
 
 export default function CategoriesManga() {
   const { type } = useParams<{ type: string }>(); // "ongoing", "completed", or genre slug
-  const [mangaList, setMangaList] = useState<Manga[]>([]);
-  const [allMangaData, setAllMangaData] = useState<Manga[]>([]);
+  const [allMangaData, setAllMangaData] = useState<MangaListItem[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [backgroundLoading, setBackgroundLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredData, setFilteredData] = useState<Manga[]>([]);
   const navigate = useNavigate();
 
-  const apiBaseUrl = `https://ponmics-api.necode.id/Comics-API/api.php?type=${type}&page=1`;
   const itemsPerPage = 15;
+
+  useEffect(() => {
+    if (!type) return;
+
+    let mounted = true;
+
+    const loadManga = async () => {
+      setLoading(true);
+      setInitialLoading(true);
+
+      try {
+        const data = await fetchMangaByType(type);
+
+        if (mounted) {
+          setAllMangaData(data);
+          setPage(1);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setInitialLoading(false);
+        }
+      }
+    };
+
+    loadManga();
+    return () => {
+      mounted = false;
+    };
+  }, [type, searchQuery]);
 
   const getPageTitle = (): string => {
     if (type === "ongoing") return "Ongoing Manga";
@@ -60,160 +91,21 @@ export default function CategoriesManga() {
     return `Explore our collection of ${readableType} manga. Find your next favorite series.`;
   };
 
-  const fetchMangaDetails = async (mangaList: any[]): Promise<Manga[]> => {
-    const mangaWithDetails = await Promise.all(
-      mangaList.map(async (manga) => {
-        try {
-          // Extract slug from link
-          const slug =
-            manga.link?.split("/komik/")[1]?.replace(/\//g, "") ||
-            manga.link?.split("/").filter(Boolean).pop() ||
-            "unknown";
-          const isColored = manga.warna === "Warna";
-          const latestChapter = manga.chapter?.[0]?.judul_chapter || "N/A";
+  const filteredData = useMemo(() => {
+    if (!searchQuery.trim()) return allMangaData;
 
-          return {
-            id: slug,
-            title: normalizeTitle(manga.judul, manga.link, 7),
-            imageUrl: manga.gambar || "/placeholder.svg",
-            type: manga.tipe || "Manga",
-            isColored,
-            latestChapter,
-            rating: "N/A",
-            genre: isColored ? "Colored" : "Black & White",
-          };
-        } catch (error) {
-          console.warn(`Failed to process manga:`, error);
-          return {
-            id: "unknown",
-            title: manga.judul || "Unknown",
-            imageUrl: manga.gambar || "/placeholder.svg",
-            type: "Manga",
-            isColored: false,
-            latestChapter: "N/A",
-            rating: "N/A",
-            genre: "Unknown",
-          };
-        }
-      })
+    return allMangaData.filter((manga) =>
+      manga.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    return mangaWithDetails;
-  };
-
-  useEffect(() => {
-    const fetchAllData = async () => {
-      setInitialLoading(true);
-      setAllMangaData([]);
-      setFilteredData([]);
-      let allManga: Manga[] = [];
-      let currentPage = 1;
-
-      try {
-        // Determine API endpoint based on type
-        let apiEndpoint = "";
-        if (type === "ongoing") {
-          apiEndpoint = `${apiBaseUrl}/?status=ongoing&page=`;
-        } else if (type === "completed") {
-          apiEndpoint = `${apiBaseUrl}/?status=completed&page=`;
-        } else {
-          // For genres, you'll need to adjust based on your API
-          apiEndpoint = `${apiBaseUrl}/?genre=${type}&page=`;
-        }
-
-        // Fetch first page
-        const firstPageRes = await fetch(`${apiEndpoint}${currentPage}`);
-        const firstPageData = await firstPageRes.json();
-
-        if (!firstPageData.data || !Array.isArray(firstPageData.data.komik)) {
-          throw new Error("Invalid manga API response");
-        }
-
-        const firstPageManga = await fetchMangaDetails(
-          firstPageData.data.komik
-        );
-        allManga = [...firstPageManga];
-        setAllMangaData(allManga);
-        setFilteredData(allManga);
-        setTotalPages(Math.ceil(allManga.length / itemsPerPage));
-        setInitialLoading(false);
-
-        // Fetch remaining pages in the background
-        setBackgroundLoading(true);
-        currentPage = 2;
-
-        while (currentPage <= 10) {
-          // Limit to 10 pages for performance
-          const res = await fetch(`${apiEndpoint}${currentPage}`);
-          const data = await res.json();
-
-          if (!data.data || !Array.isArray(data.data.komik)) {
-            console.warn(
-              `Invalid or empty response for page ${currentPage}, stopping fetch.`
-            );
-            break;
-          }
-
-          const komikList = data.data.komik;
-
-          if (komikList.length === 0) {
-            console.log(
-              `No more manga on page ${currentPage}, stopping fetch.`
-            );
-            break;
-          }
-
-          const mangaWithDetails = await fetchMangaDetails(komikList);
-          allManga = [...allManga, ...mangaWithDetails];
-
-          currentPage++;
-          setAllMangaData([...allManga]);
-          setFilteredData([...allManga]);
-          setTotalPages(Math.ceil(allManga.length / itemsPerPage));
-        }
-      } catch (error) {
-        console.error(`Error fetching manga:`, error);
-        if (!allManga.length) {
-          setAllMangaData([]);
-          setFilteredData([]);
-          setTotalPages(0);
-        }
-      } finally {
-        setBackgroundLoading(false);
-      }
-    };
-
-    if (type) fetchAllData();
-  }, [type]);
-
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredData(allMangaData);
-    } else {
-      const filtered = allMangaData.filter((manga) =>
-        manga.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
-    setPage(1);
   }, [searchQuery, allMangaData]);
 
-  useEffect(() => {
-    setLoading(true);
-    const timer = setTimeout(() => {
-      if (Array.isArray(filteredData)) {
-        const startIndex = (page - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const newMangaList = filteredData.slice(startIndex, endIndex);
-        setMangaList(newMangaList);
-        setTotalPages(Math.ceil(filteredData.length / itemsPerPage));
-      } else {
-        setMangaList([]);
-        setTotalPages(0);
-      }
-      setLoading(false);
-    }, 300);
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredData.length / itemsPerPage);
+  }, [filteredData.length]);
 
-    return () => clearTimeout(timer);
+  const mangaList = useMemo(() => {
+    const startIndex = (page - 1) * itemsPerPage;
+    return filteredData.slice(startIndex, startIndex + itemsPerPage);
   }, [page, filteredData]);
 
   const handlePrevPage = () => {
@@ -319,27 +211,23 @@ export default function CategoriesManga() {
           </div>
         )}
 
-        {initialLoading ? (
+        {initialLoading && allMangaData.length === 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
             {[...Array(itemsPerPage)].map((_, index) => (
               <div key={index} className="flex flex-col gap-2">
                 <Skeleton
                   variant="rounded"
-                  width="100%"
-                  height={0}
                   className="w-full aspect-[2/3] rounded-lg"
                   sx={{ bgcolor: "grey.800" }}
                 />
                 <Skeleton
                   variant="text"
                   width="80%"
-                  height={20}
                   sx={{ bgcolor: "grey.800" }}
                 />
                 <Skeleton
                   variant="text"
                   width="50%"
-                  height={16}
                   sx={{ bgcolor: "grey.800" }}
                 />
               </div>
@@ -406,7 +294,7 @@ export default function CategoriesManga() {
                           <>
                             <span className="mx-1">•</span>
                             <span className="line-clamp-1">
-                              {manga.latestChapter}
+                              {manga.latestChapter.title}
                             </span>
                           </>
                         )}

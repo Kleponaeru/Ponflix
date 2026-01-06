@@ -42,6 +42,10 @@ export default function CategoriesManga() {
   const itemsPerPage = 15;
 
   useEffect(() => {
+    setPage((p) => (p === 1 ? p : 1));
+  }, [searchQuery]);
+
+  useEffect(() => {
     if (!type) return;
 
     let mounted = true;
@@ -71,7 +75,7 @@ export default function CategoriesManga() {
     return () => {
       mounted = false;
     };
-  }, [type, searchQuery]);
+  }, [type]);
 
   const getPageTitle = (): string => {
     if (type === "ongoing") return "Ongoing Manga";

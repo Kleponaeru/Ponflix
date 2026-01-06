@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "react-router-dom";
-import MangaDetail from "./MangaDetail";
+import MangaDetail from "./detail/MangaDetail";
 
 export default function Chapter() {
   const { id, chapterId } = useParams<{ id: string; chapterId: string }>();

@@ -9,16 +9,16 @@ import CompletedDetail from "./components/anime/CompletedDetail";
 import Skeleton from "@mui/material/Skeleton";
 import Stream from "./components/pages/Stream";
 import Genres from "./components/pages/Genres";
-import MangaRows from "./components/pages/comics/MangaRows";
-import UnderConstruction from "./components/pages/maintenance/UnderConstruction";
-import MangaDetail from "./components/pages/comics/MangaDetail";
-import Chapter from "./components/pages/comics/Chapter";
-import ChapterReader from "./components/pages/comics/ChapterReader";
-import CategoriesManga from "./components/pages/comics/detail/CategoriesManga";
+import MangaRows from "./components/comics/MangaRows";
+import UnderConstruction from "./components/maintenance/UnderConstruction";
+import MangaDetail from "./components/comics/detail/MangaDetail";
+import Chapter from "./components/comics/Chapter";
+import ChapterReader from "./components/comics/ChapterReader";
+import CategoriesManga from "./components/comics/detail/CategoriesManga";
 
 export default function App() {
   const [categories, setCategories] = useState([]);
-  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
+  // const apiBaseUrl = "https://wajik-anime-api.vercel.app";
 
   // useEffect(() => {
   //   const fetchData = async () => {

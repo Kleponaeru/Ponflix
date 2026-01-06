@@ -10,7 +10,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Navbar from "../../../ui/Navbar";
+import Navbar from "../../ui/Navbar";
 import Skeleton from "@mui/material/Skeleton";
 import { motion } from "framer-motion";
 import { useMemo } from "react";

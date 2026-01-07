@@ -1,8 +1,17 @@
-const colorMap = {
+export type AccentColor = "red" | "blue" | "green" | "purple" | "orange";
+
+export type AccentColorConfig = {
+  title: string;
+  gradient: string;
+  seeMore: string;
+  activeButton: string;
+};
+
+export const mangaAccentColors: Record<AccentColor, AccentColorConfig> = {
   red: {
     title: "text-red-500",
     gradient: "from-red-500/20 via-transparent to-transparent",
-    seeMore: "text-red-800 hover:text-red-500",
+    seeMore: "text-red-400 hover:text-red-300",
     activeButton: "bg-gradient-to-r from-red-600 to-red-500",
   },
   blue: {

@@ -4,11 +4,12 @@ import MangaRowScroller from "./MangaRowScroller";
 import MangaCard from "../MangaCard/MangaCard";
 import { useMangaRowScroll } from "./useMangaRowScroll";
 import Skeleton from "@mui/material/Skeleton";
+import { mangaAccentColors, AccentColor } from "@/config/mangaAccentColors";
 
 interface MangaRowProps {
   title: string;
   mangas: MangaListItem[];
-  accentColor?: "red" | "blue" | "green" | "purple" | "orange";
+  accentColor?: AccentColor;
   genreId?: string;
   isLoading?: boolean;
 }

@@ -27,13 +27,6 @@ const MangaRowScroller = forwardRef<HTMLDivElement, Props>(
   ) => {
     const colors = mangaAccentColors[accentColor];
 
-    console.log("MangaRowScroller render:", {
-      canLeft,
-      canRight,
-      activeDot,
-      dotCount,
-    });
-
     return (
       <div className="relative">
         {/* Scroll Container */}
@@ -41,7 +34,6 @@ const MangaRowScroller = forwardRef<HTMLDivElement, Props>(
           {/* Left Button - ALWAYS VISIBLE FOR TESTING */}
           <button
             onClick={() => {
-              console.log("Left clicked, canLeft:", canLeft);
               scroll("left");
             }}
             className={`absolute left-4 top-1/2 -translate-y-1/2 z-50 
@@ -66,7 +58,6 @@ const MangaRowScroller = forwardRef<HTMLDivElement, Props>(
           {/* Right Button - ALWAYS VISIBLE FOR TESTING */}
           <button
             onClick={() => {
-              console.log("Right clicked, canRight:", canRight);
               scroll("right");
             }}
             className={`absolute right-4 top-1/2 -translate-y-1/2 z-50 

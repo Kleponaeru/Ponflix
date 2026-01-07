@@ -1,24 +1,20 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function useMangaRowScroll(dotCount: number) {
-  const rowRef = useRef<HTMLDivElement>(null);
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
+    null
+  );
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
   const [activeDot, setActiveDot] = useState(0);
 
   const updateScrollState = useCallback(() => {
-    const el = rowRef.current;
+    const el = scrollElement; // ⭐ USE scrollElement, not rowRef!
     if (!el) {
       return;
     }
 
     const { scrollLeft, scrollWidth, clientWidth } = el;
-
-    console.log("📏 Scroll event fired:", {
-      scrollLeft: Math.round(scrollLeft),
-      scrollWidth,
-      clientWidth,
-    });
 
     // Check if we can scroll
     const newCanLeft = scrollLeft > 5;
@@ -35,30 +31,14 @@ export function useMangaRowScroll(dotCount: number) {
       const rawDot = ratio * dotCount;
       const dot = Math.min(dotCount - 1, Math.floor(rawDot));
 
-      console.log("🎯 Dot calculation:", {
-        scrollLeft: Math.round(scrollLeft),
-        maxScroll,
-        ratio: ratio.toFixed(3),
-        rawDot: rawDot.toFixed(2),
-        finalDot: dot,
-        dotCount,
-        currentActiveDot: activeDot,
-      });
-
       setActiveDot(dot);
     } else {
       setActiveDot(0);
     }
-  }, [dotCount, activeDot]);
+  }, [scrollElement, dotCount]); // ⭐ Add scrollElement as dependency!
 
   useEffect(() => {
-    const el = rowRef.current;
-    console.log(
-      "🔧 Setting up listeners, element:",
-      el ? "found" : "not found"
-    );
-
-    if (!el) return;
+    if (!scrollElement) return;
 
     // Check immediately
     updateScrollState();
@@ -67,56 +47,49 @@ export function useMangaRowScroll(dotCount: number) {
     const timer1 = setTimeout(updateScrollState, 300);
     const timer2 = setTimeout(updateScrollState, 1000);
 
-    // Listen to scroll with passive: false to ensure it fires
+    // Listen to scroll
     const handleScroll = () => {
-      console.log("📜 Scroll event detected!");
       updateScrollState();
     };
 
-    el.addEventListener("scroll", handleScroll, { passive: true });
+    scrollElement.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", updateScrollState);
 
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      el.removeEventListener("scroll", handleScroll);
+      scrollElement.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", updateScrollState);
     };
-  }, [updateScrollState]);
+  }, [scrollElement, updateScrollState]);
 
   const scroll = useCallback(
     (direction: "left" | "right") => {
-      const el = rowRef.current;
-      if (!el) {
+      if (!scrollElement) {
         return;
       }
 
-      console.log("⬅️➡️ Scrolling:", direction);
-
-      const scrollAmount = el.clientWidth * 0.8;
+      const scrollAmount = scrollElement.clientWidth * 0.8;
       const newPosition =
         direction === "left"
-          ? el.scrollLeft - scrollAmount
-          : el.scrollLeft + scrollAmount;
+          ? scrollElement.scrollLeft - scrollAmount
+          : scrollElement.scrollLeft + scrollAmount;
 
-      console.log("📍 Scroll to:", Math.round(newPosition));
-
-      el.scrollTo({
+      scrollElement.scrollTo({
         left: newPosition,
         behavior: "smooth",
       });
 
       // Force update after scroll animation completes
       setTimeout(() => {
-        console.log("⏰ Force update after scroll");
         updateScrollState();
       }, 500);
     },
-    [updateScrollState]
+    [scrollElement, updateScrollState]
   );
 
   return {
-    rowRef,
+    rowRef: setScrollElement, // Callback ref
     canLeft,
     canRight,
     activeDot,

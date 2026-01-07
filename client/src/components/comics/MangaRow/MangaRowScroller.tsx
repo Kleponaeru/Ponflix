@@ -1,125 +1,105 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { ReactNode, forwardRef } from "react";
+import { AccentColor, mangaAccentColors } from "@/config/mangaAccentColors";
 
-interface MangaRowScrollerProps {
+interface Props {
   children: ReactNode;
-  ref: React.RefObject<HTMLDivElement | null>;
   canLeft: boolean;
   canRight: boolean;
   activeDot: number;
   dotCount: number;
-  scrollBy: (dir: "left" | "right") => void;
-  accentColor?: "red" | "blue" | "green" | "purple" | "orange";
+  scroll: (dir: "left" | "right") => void;
+  accentColor?: AccentColor;
 }
 
-export default function MangaRowScroller({
-  children,
-  ref,
-  canLeft,
-  canRight,
-  activeDot,
-  dotCount,
-  scrollBy,
-  accentColor = "red",
-}: MangaRowScrollerProps) {
-  const colorMap = {
-    red: {
-      button: "text-red-400",
-      activeButton: "bg-gradient-to-r from-red-600 to-red-500",
-      scrollButton: "hover:bg-red-600/30 border-red-500/30",
-      glow: "shadow-red-500/50",
+const MangaRowScroller = forwardRef<HTMLDivElement, Props>(
+  (
+    {
+      children,
+      canLeft,
+      canRight,
+      activeDot,
+      dotCount,
+      scroll,
+      accentColor = "red",
     },
-    blue: {
-      button: "text-blue-400",
-      activeButton: "bg-gradient-to-r from-blue-600 to-blue-500",
-      scrollButton: "hover:bg-blue-600/30 border-blue-500/30",
-      glow: "shadow-blue-500/50",
-    },
-    green: {
-      button: "text-green-400",
-      activeButton: "bg-gradient-to-r from-green-600 to-green-500",
-      scrollButton: "hover:bg-green-600/30 border-green-500/30",
-      glow: "shadow-green-500/50",
-    },
-    purple: {
-      button: "text-purple-400",
-      activeButton: "bg-gradient-to-r from-purple-600 to-purple-500",
-      scrollButton: "hover:bg-purple-600/30 border-purple-500/30",
-      glow: "shadow-purple-500/50",
-    },
-    orange: {
-      button: "text-orange-400",
-      activeButton: "bg-gradient-to-r from-orange-600 to-orange-500",
-      scrollButton: "hover:bg-orange-600/30 border-orange-500/30",
-      glow: "shadow-orange-500/50",
-    },
-  };
+    ref
+  ) => {
+    const colors = mangaAccentColors[accentColor];
 
-  const colors = colorMap[accentColor];
+    console.log("MangaRowScroller render:", {
+      canLeft,
+      canRight,
+      activeDot,
+      dotCount,
+    });
 
-  return (
-    <div className="space-y-4">
-      <div className="relative group/row">
-        {/* Left Scroll Button */}
-        <Button
-          variant="outline"
-          size="icon"
-          className={`absolute top-0 bottom-0 left-0 z-40 m-auto h-10 w-10 
-            rounded-full backdrop-blur-md transition-all duration-300
-            ${colors.scrollButton}
-            ${
-              canLeft
-                ? "opacity-0 group-hover/row:opacity-100 shadow-lg"
-                : "opacity-0 pointer-events-none"
-            }`}
-          onClick={() => scrollBy("left")}
-          disabled={!canLeft}
-        >
-          <ChevronLeft className={`h-5 w-5 ${colors.button}`} />
-        </Button>
+    return (
+      <div className="relative">
+        {/* Scroll Container */}
+        <div className="relative group/row">
+          {/* Left Button - ALWAYS VISIBLE FOR TESTING */}
+          <button
+            onClick={() => {
+              console.log("Left clicked, canLeft:", canLeft);
+              scroll("left");
+            }}
+            className={`absolute left-4 top-1/2 -translate-y-1/2 z-50 
+              w-10 h-10 rounded-full backdrop-blur-md
+              bg-black/80 border-2 border-red-500
+              flex items-center justify-center
+              transition-opacity duration-300 shadow-xl
+              ${canLeft ? "opacity-100" : "opacity-30"}`}
+          >
+            <ChevronLeft className="w-5 h-5 text-white" />
+          </button>
 
-        {/* Scrollable Container */}
-        <div
-          ref={ref}
-          className="flex items-center space-x-5 overflow-x-scroll scrollbar-hide pb-12 will-change-scroll px-4 md:px-12"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-        >
-          {children}
+          {/* Scrollable Area */}
+          <div
+            ref={ref}
+            className="flex gap-5 overflow-x-auto scrollbar-hide px-4 md:px-12 pb-8"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {children}
+          </div>
+
+          {/* Right Button - ALWAYS VISIBLE FOR TESTING */}
+          <button
+            onClick={() => {
+              console.log("Right clicked, canRight:", canRight);
+              scroll("right");
+            }}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 z-50 
+              w-10 h-10 rounded-full backdrop-blur-md
+              bg-black/80 border-2 border-red-500
+              flex items-center justify-center
+              transition-opacity duration-300 shadow-xl
+              ${canRight ? "opacity-100" : "opacity-30"}`}
+          >
+            <ChevronRight className="w-5 h-5 text-white" />
+          </button>
         </div>
 
-        {/* Right Scroll Button */}
-        <Button
-          variant="outline"
-          size="icon"
-          className={`absolute top-0 bottom-0 right-0 z-40 m-auto h-10 w-10 
-            rounded-full backdrop-blur-md transition-all duration-300
-            ${colors.scrollButton}
-            ${
-              canRight
-                ? "opacity-0 group-hover/row:opacity-100 shadow-lg"
-                : "opacity-0 pointer-events-none"
-            }`}
-          onClick={() => scrollBy("right")}
-          disabled={!canRight}
-        >
-          <ChevronRight className={`h-5 w-5 ${colors.button}`} />
-        </Button>
+        {/* Progress Dots */}
+        {dotCount > 1 && (
+          <div className="flex justify-center gap-2 mt-4">
+            {Array.from({ length: dotCount }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === activeDot
+                    ? `${colors.activeButton} w-16 ${colors.glow}`
+                    : "bg-gray-700 w-8"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
+    );
+  }
+);
 
-      {/* Progress Dots */}
-      <div className="flex justify-center gap-2 mt-3">
-        {Array.from({ length: dotCount }).map((_, index) => (
-          <div
-            key={index}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              index === activeDot
-                ? `${colors.activeButton} w-20 shadow-lg ${colors.glow}`
-                : "bg-gray-800 w-10 hover:bg-gray-700"
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+MangaRowScroller.displayName = "MangaRowScroller";
+
+export default MangaRowScroller;

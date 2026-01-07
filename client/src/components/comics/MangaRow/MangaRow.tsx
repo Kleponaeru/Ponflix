@@ -2,9 +2,9 @@ import { MangaListItem } from "@/types/manga-list";
 import MangaRowHeader from "./MangaRowHeader";
 import MangaRowScroller from "./MangaRowScroller";
 import MangaCard from "../MangaCard/MangaCard";
-import { useMangaRowScroll } from "./useMangaRowScroll";
+import { useMangaRowScroll } from "@/hooks/useMangaRowScroll";
 import Skeleton from "@mui/material/Skeleton";
-import { mangaAccentColors, AccentColor } from "@/config/mangaAccentColors";
+import { AccentColor } from "@/config/mangaAccentColors";
 
 interface MangaRowProps {
   title: string;
@@ -70,11 +70,11 @@ export default function MangaRow({
         </div>
       ) : (
         <MangaRowScroller
-          ref={scroll.ref}
+          ref={scroll.rowRef}
           canLeft={scroll.canLeft}
           canRight={scroll.canRight}
           activeDot={scroll.activeDot}
-          scrollBy={scroll.scrollBy}
+          scroll={scroll.scroll}
           dotCount={dotCount}
           accentColor={accentColor}
         >

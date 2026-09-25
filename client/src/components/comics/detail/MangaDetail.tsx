@@ -6,6 +6,7 @@ import { Loader2, Star, Calendar } from "lucide-react";
 import type { Manga } from "@/types/manga";
 import { mapMangaDetail } from "@/lib/mappers/manga";
 import { parseIndoTimeAgo } from "@/utils/timeAgo";
+import { extractSlug } from "@/utils/extractSlug";
 
 export default function MangaDetail(): JSX.Element {
   const { id } = useParams<{ id: string }>();
@@ -137,7 +138,9 @@ export default function MangaDetail(): JSX.Element {
             {manga.firstChapter && (
               <button
                 onClick={() =>
-                  navigate(`/comics/${id}/chapter/${manga.firstChapter?.slug}`)
+                  navigate(
+                    `/comics/${id}/chapter/${extractSlug(manga.firstChapter?.slug)}`
+                  )
                 }
                 className="w-full sm:w-auto gap-3 px-5 py-2 group relative inline-flex items-center justify-center
                  bg-white text-black rounded-md overflow-hidden transition-all duration-300
@@ -151,7 +154,9 @@ export default function MangaDetail(): JSX.Element {
             {manga.latestChapter && (
               <button
                 onClick={() =>
-                  navigate(`/comics/${id}/chapter/${manga.latestChapter?.slug}`)
+                  navigate(
+                    `/comics/${id}/chapter/${extractSlug(manga.latestChapter?.slug)}`
+                  )
                 }
                 className="w-full sm:w-auto px-5 py-2 border border-gray-600 rounded-md
                  hover:border-red-600 hover:text-red-500 transition text-center"
@@ -189,7 +194,9 @@ export default function MangaDetail(): JSX.Element {
             {manga.chapters.map((c) => (
               <button
                 key={c.slug}
-                onClick={() => navigate(`/comics/${id}/chapter${c.slug}`)}
+                onClick={() =>
+                  navigate(`/comics/${id}/chapter/${extractSlug(c.slug)}`)
+                }
                 className="w-full flex justify-between items-center px-4 py-3 bg-gray-900 rounded hover:bg-red-600 transition"
               >
                 <span>{c.title}</span>

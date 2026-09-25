@@ -2,6 +2,7 @@ import { MangaListItem } from "@/types/manga-list";
 import { useNavigate } from "react-router-dom";
 import { Play, Info, Flame } from "lucide-react";
 import { motion } from "framer-motion";
+import { fetchFirstChapterSlug } from "@/services/mangaService";
 
 interface Props {
   manga: MangaListItem;
@@ -11,9 +12,20 @@ interface Props {
 export default function MangaCard({ manga, index = 0 }: Props) {
   const navigate = useNavigate();
 
-  const handleStreamClick = (e: React.MouseEvent) => {
+  const handleStreamClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/comics/${manga.id}/chapter/1`);
+
+    try {
+      const firstChapterSlug = await fetchFirstChapterSlug(manga.id);
+      navigate(
+        firstChapterSlug
+          ? `/comics/${manga.id}/chapter/${firstChapterSlug}`
+          : `/comics/${manga.id}`
+      );
+    } catch (error) {
+      console.error("Failed to find the first chapter:", error);
+      navigate(`/comics/${manga.id}`);
+    }
   };
 
   const handleInfoClick = (e: React.MouseEvent) => {

@@ -1,5 +1,19 @@
 import { MangaListItem } from "@/types/manga-list";
 import { normalizeManga } from "@/utils/normalizeManga";
+import { extractSlug } from "@/utils/extractSlug";
+
+const API_BASE_URL = "https://ponmics-api.necode.id/Comics-API/api.php";
+
+export async function fetchFirstChapterSlug(
+  mangaId: string
+): Promise<string | undefined> {
+  const res = await fetch(`${API_BASE_URL}?komik=${encodeURIComponent(mangaId)}`);
+  if (!res.ok) return undefined;
+
+  const json = await res.json();
+  const chapterLink = json?.data?.chapter_awal?.link_chapter;
+  return chapterLink ? extractSlug(chapterLink) : undefined;
+}
 
 export async function fetchMangaByType(
   type: string,
@@ -18,7 +32,7 @@ export async function fetchMangaByType(
 
   while (page <= maxPages) {
     const res = await fetch(
-      `https://ponmics-api.necode.id/Comics-API/api.php${endpoint}${page}`,
+      `${API_BASE_URL}${endpoint}${page}`,
       { signal: options?.signal }
     );
 

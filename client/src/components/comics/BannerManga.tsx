@@ -3,6 +3,8 @@ import { Play, Info, Star, TrendingUp, Sparkles, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { normalizeTitle } from "@/utils/title";
+import { useNavigate } from "react-router-dom";
+import { fetchFirstChapterSlug } from "@/services/mangaService";
 
 // Extended interface for banner display
 interface BannerManga {
@@ -33,6 +35,7 @@ export default function MangaHeroBanner({
   autoPlayInterval = 5000,
   maxItems = 5,
 }: MangaHeroBannerProps) {
+  const navigate = useNavigate();
   const [mangas, setMangas] = useState<BannerManga[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -125,16 +128,26 @@ export default function MangaHeroBanner({
     return () => clearInterval(interval);
   }, [isAutoPlaying, mangas.length, autoPlayInterval]);
 
-  const handleReadNow = () => {
-    if (mangas[currentIndex]) {
-      window.location.href = `/comics/${mangas[currentIndex].id}/chapter/${mangas[currentIndex].id}-chapter-1`;
+  const handleReadNow = async () => {
+    const manga = mangas[currentIndex];
+    if (!manga) return;
+
+    try {
+      const firstChapterSlug = await fetchFirstChapterSlug(manga.id);
+      navigate(
+        firstChapterSlug
+          ? `/comics/${manga.id}/chapter/${firstChapterSlug}`
+          : `/comics/${manga.id}`
+      );
+    } catch (error) {
+      console.error("Failed to find the first chapter:", error);
+      navigate(`/comics/${manga.id}`);
     }
   };
 
   const handleMoreInfo = () => {
-    if (mangas[currentIndex]) {
-      window.location.href = `/comics/${mangas[currentIndex].id}`;
-    }
+    const manga = mangas[currentIndex];
+    if (manga) navigate(`/comics/${manga.id}`);
   };
 
   // Loading state

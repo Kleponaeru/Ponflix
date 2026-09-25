@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { JSX, useEffect, useState, useRef } from "react";
+import { extractSlug } from "@/utils/extractSlug";
 import {
   Loader2,
   ChevronLeft,
@@ -109,17 +110,9 @@ export default function ChapterReader(): JSX.Element {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft" && chapter?.prevChapter) {
-      const prevPath = chapter.prevChapter.slug;
-      const match = prevPath.match(/\/(.+)-chapter-(.+)\//);
-      if (match) {
-        navigate(`/comics/${match[1]}/chapter/${match[2]}`);
-      }
+      navigate(`/comics/${id}/chapter/${extractSlug(chapter.prevChapter.slug)}`);
     } else if (e.key === "ArrowRight" && chapter?.nextChapter) {
-      const nextPath = chapter.nextChapter.slug;
-      const match = nextPath.match(/\/(.+)-chapter-(.+)\//);
-      if (match) {
-        navigate(`/comics/${match[1]}/chapter/${match[2]}`);
-      }
+      navigate(`/comics/${id}/chapter/${extractSlug(chapter.nextChapter.slug)}`);
     } else if (e.key === "Escape") {
       navigate(`/comics/${chapter?.mangaSlug}`);
     }
@@ -269,11 +262,9 @@ export default function ChapterReader(): JSX.Element {
           {chapter.nextChapter ? (
             <button
               onClick={() => {
-                const nextPath = chapter.nextChapter?.slug;
-                const match = nextPath?.match(/\/(.+)-chapter-(.+)\//);
-                if (match) {
-                  navigate(`/comics/${match[1]}/chapter/${match[2]}`);
-                }
+                navigate(
+                  `/comics/${id}/chapter/${extractSlug(chapter.nextChapter!.slug)}`
+                );
               }}
               className="px-8 py-3 bg-red-600 hover:bg-red-700 rounded-md font-medium transition-all hover:scale-105"
             >
@@ -314,11 +305,9 @@ export default function ChapterReader(): JSX.Element {
               <button
                 onClick={() => {
                   if (chapter.prevChapter) {
-                    const prevPath = chapter.prevChapter.slug;
-                    const match = prevPath.match(/\/(.+)-chapter-(.+)\//);
-                    if (match) {
-                      navigate(`/comics/${match[1]}/chapter/${match[2]}`);
-                    }
+                    navigate(
+                      `/comics/${id}/chapter/${extractSlug(chapter.prevChapter.slug)}`
+                    );
                   }
                 }}
                 disabled={!chapter.prevChapter}
@@ -345,11 +334,9 @@ export default function ChapterReader(): JSX.Element {
               <button
                 onClick={() => {
                   if (chapter.nextChapter) {
-                    const nextPath = chapter.nextChapter.slug;
-                    const match = nextPath.match(/\/(.+)-chapter-(.+)\//);
-                    if (match) {
-                      navigate(`/comics/${match[1]}/chapter/${match[2]}`);
-                    }
+                    navigate(
+                      `/comics/${id}/chapter/${extractSlug(chapter.nextChapter.slug)}`
+                    );
                   }
                 }}
                 disabled={!chapter.nextChapter}

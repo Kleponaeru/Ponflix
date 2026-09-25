@@ -1,374 +1,223 @@
-import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Loader2,
-  Tag,
-  Calendar,
-  BookOpen,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Navbar from "../../ui/Navbar";
-import Skeleton from "@mui/material/Skeleton";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useMemo } from "react";
-import { MangaListItem } from "@/types/manga-list";
+import { BookOpen, ChevronLeft, ChevronRight, RotateCw, Search } from "lucide-react";
 import { fetchMangaByType } from "@/services/mangaService";
+import type { MangaListItem } from "@/types/manga-list";
 import { normalizeTitle } from "@/utils/title";
 
-interface Manga {
-  id: string;
-  title: string;
-  imageUrl: string;
-  type: string;
-  isColored: boolean;
-  latestChapter?: string;
-  rating?: string;
-  genre?: string;
+const ITEMS_PER_PAGE = 20;
+
+function titleForType(type?: string) {
+  if (!type) return "Comics";
+  if (type.toLowerCase() === "ongoing") return "Ongoing comics";
+  if (type.toLowerCase() === "completed") return "Completed comics";
+  return `Explore ${normalizeTitle(undefined, type, 3)}`;
+}
+
+function CategorySkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 lg:gap-5" aria-hidden="true">
+      {Array.from({ length: 10 }).map((_, index) => (
+        <div key={index}>
+          <div className="aspect-[2/3] animate-pulse rounded-xl bg-white/[0.06]" />
+          <div className="mt-3 h-3 w-3/4 animate-pulse rounded bg-white/[0.06]" />
+          <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-white/[0.04]" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function CategoriesManga() {
-  const { type } = useParams<{ type: string }>(); // "ongoing", "completed", or genre slug
-  const [allMangaData, setAllMangaData] = useState<MangaListItem[]>([]);
+  const { type } = useParams<{ type: string }>();
+  const [mangas, setMangas] = useState<MangaListItem[]>([]);
+  const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [backgroundLoading, setBackgroundLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
-
-  const itemsPerPage = 15;
-
-  useEffect(() => {
-    setPage((p) => (p === 1 ? p : 1));
-  }, [searchQuery]);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!type) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
 
-    let mounted = true;
-
-    const loadManga = async () => {
-      setLoading(true);
-      setInitialLoading(true);
-
-      try {
-        const data = await fetchMangaByType(type);
-
-        if (mounted) {
-          setAllMangaData(data);
-          setPage(1);
+    fetchMangaByType(type, 10, { signal: controller.signal })
+      .then((results) => {
+        setMangas(results);
+        setPage(1);
+      })
+      .catch((fetchError) => {
+        if (fetchError.name !== "AbortError") {
+          setError("We couldn’t load this collection. Please try again.");
+          setMangas([]);
         }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-          setInitialLoading(false);
-        }
-      }
-    };
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
 
-    loadManga();
-    return () => {
-      mounted = false;
-    };
-  }, [type]);
+    return () => controller.abort();
+  }, [type, reloadKey]);
 
-  const getPageTitle = (): string => {
-    if (type === "ongoing") return "Ongoing Manga";
-    if (type === "completed") return "Completed Manga";
-    return normalizeTitle(undefined, type, 3);
-  };
-
-  const getPageDescription = (): string => {
-    if (type === "ongoing")
-      return "Discover the latest ongoing manga series with regular updates.";
-
-    if (type === "completed")
-      return "Browse our collection of completed manga series.";
-
-    const readableType = normalizeTitle(undefined, type, 4);
-
-    return `Explore our collection of ${readableType} manga. Find your next favorite series.`;
-  };
-
-  const filteredData = useMemo(() => {
-    if (!searchQuery.trim()) return allMangaData;
-
-    return allMangaData.filter((manga) =>
-      manga.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMangas = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return mangas;
+    return mangas.filter((manga) =>
+      manga.title.toLowerCase().includes(normalizedQuery)
     );
-  }, [searchQuery, allMangaData]);
+  }, [mangas, query]);
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredData.length / itemsPerPage);
-  }, [filteredData.length]);
+  const pageCount = Math.ceil(filteredMangas.length / ITEMS_PER_PAGE);
+  const visibleMangas = filteredMangas.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
 
-  const mangaList = useMemo(() => {
-    const startIndex = (page - 1) * itemsPerPage;
-    return filteredData.slice(startIndex, startIndex + itemsPerPage);
-  }, [page, filteredData]);
+  useEffect(() => setPage(1), [query]);
 
-  const handlePrevPage = () => {
-    if (page > 1) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      setPage(page - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (page < totalPages) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      setPage(page + 1);
-    }
-  };
-
-  const handleMangaClick = (mangaId: string) => {
-    navigate(`/comics/${mangaId}`);
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: "spring", stiffness: 260, damping: 20 },
-    },
-  };
-
-  const getHeaderColor = (): string => {
-    if (type === "ongoing") return "from-red-900 to-orange-900";
-    if (type === "completed") return "from-green-900 to-emerald-900";
-    return "from-purple-900 to-pink-900";
+  const title = titleForType(type);
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen bg-black text-white pt-16 px-4 md:px-12 pb-12">
-        <div className="relative w-full h-[150px] md:h-[200px] mb-8 overflow-hidden rounded-xl">
-          <div
-            className={`absolute inset-0 bg-gradient-to-r ${getHeaderColor()} opacity-80`}
-          ></div>
-          <div className="absolute inset-0 bg-[url('/placeholder.svg')] bg-cover bg-center mix-blend-overlay opacity-30"></div>
-          <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-12">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center">
-              <BookOpen className="h-6 w-6 mr-2 text-red-400" />
-              {getPageTitle()}
-            </h1>
-            <p className="text-gray-300 max-w-2xl">{getPageDescription()}</p>
-          </div>
-        </div>
+    <main className="min-h-screen bg-[#08090b] px-4 pb-16 pt-[5.75rem] text-white md:px-8">
+      <div className="content-shell">
+        <section className="relative isolate mb-8 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111216] px-5 py-8 sm:px-8 sm:py-10 md:px-12">
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_85%_5%,rgba(229,9,20,0.22),transparent_48%),linear-gradient(115deg,#1b1013,#111216_58%,#0c0d10)]" />
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#ff6670]">
+            Browse the library
+          </p>
+          <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            <BookOpen className="h-6 w-6 shrink-0 text-[#e50914]" />
+            {title}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/60 sm:text-base">
+            Find your next series from the Ponflix collection. Browse recent releases and discover a new world to get lost in.
+          </p>
+        </section>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <nav className="text-sm md:text-base font-medium flex items-center gap-2">
-            <Link
-              to="/"
-              className="text-red-500 hover:text-red-600 transition-colors"
-            >
-              Home
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm font-medium">
+            <Link to="/comics" className="text-white/50 transition hover:text-white">
+              Comics
             </Link>
-            <span className="text-gray-400">/</span>
-            <span className="text-white">{getPageTitle()}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-white/30" />
+            <span className="text-white">{title}</span>
           </nav>
-
-          <div className="relative w-full md:w-auto md:min-w-[300px]">
+          <label className="flex h-11 w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 transition focus-within:border-white/25 sm:max-w-sm">
+            <Search className="h-4 w-4 shrink-0 text-white/40" />
             <input
-              type="text"
-              placeholder="Search manga..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search this collection"
+              aria-label="Search this collection"
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-              >
-                ×
-              </button>
-            )}
-          </div>
+          </label>
         </div>
 
-        {!initialLoading && (
-          <div className="flex justify-between items-center mb-6">
-            <p className="text-sm text-gray-400">
-              Showing{" "}
-              {filteredData.length > 0 ? (page - 1) * itemsPerPage + 1 : 0} -{" "}
-              {Math.min(page * itemsPerPage, filteredData.length)} of{" "}
-              {filteredData.length} manga
-              {backgroundLoading && " (Loading more in background...)"}
-            </p>
-          </div>
+        {!loading && !error && (
+          <p className="mb-5 text-xs text-white/45">
+            {filteredMangas.length} {filteredMangas.length === 1 ? "title" : "titles"}
+            {query && ` matching “${query}”`}
+          </p>
         )}
 
-        {initialLoading && allMangaData.length === 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-            {[...Array(itemsPerPage)].map((_, index) => (
-              <div key={index} className="flex flex-col gap-2">
-                <Skeleton
-                  variant="rounded"
-                  className="w-full aspect-[2/3] rounded-lg"
-                  sx={{ bgcolor: "grey.800" }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="80%"
-                  sx={{ bgcolor: "grey.800" }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="50%"
-                  sx={{ bgcolor: "grey.800" }}
-                />
-              </div>
-            ))}
+        {loading ? (
+          <CategorySkeleton />
+        ) : error ? (
+          <div className="rounded-xl border border-red-500/20 bg-red-500/[0.06] px-5 py-10 text-center">
+            <p className="text-sm text-white/70">{error}</p>
+            <button
+              type="button"
+              onClick={() => setReloadKey((key) => key + 1)}
+              className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-medium transition hover:bg-white/10"
+            >
+              <RotateCw className="h-4 w-4" /> Try again
+            </button>
           </div>
-        ) : (
-          <>
-            {loading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-10 w-10 animate-spin text-red-500" />
-              </div>
-            ) : (
+        ) : visibleMangas.length ? (
+          <motion.div
+            key={`${type}-${page}`}
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { staggerChildren: 0.025 } },
+            }}
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 lg:gap-5"
+          >
+            {visibleMangas.map((manga, index) => (
               <motion.div
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
+                key={manga.id}
+                variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}
               >
-                {mangaList.map((manga) => (
-                  <motion.div
-                    key={manga.id}
-                    variants={itemVariants}
-                    onClick={() => handleMangaClick(manga.id)}
-                    className="group flex flex-col cursor-pointer"
-                  >
-                    <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg mb-2 bg-gray-800">
-                      <img
-                        src={manga.imageUrl}
-                        alt={manga.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute bottom-0 left-0 right-0 p-3">
-                          {/* <div
-                            className={`${
-                              manga.status === "Ongoing"
-                                ? "bg-red-600"
-                                : manga.status === "Completed"
-                                ? "bg-green-600"
-                                : "bg-blue-600"
-                            } text-white text-xs font-medium px-2 py-1 rounded-sm inline-block mb-2`}
-                          >
-                            {manga.status.toUpperCase()}
-                          </div> */}
-                          {manga.isColored && (
-                            <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-medium px-2 py-1 rounded-sm inline-block mb-2 ml-1">
-                              COLORED
-                            </div>
-                          )}
-                          <p className="text-white text-sm font-medium line-clamp-2">
-                            {manga.title}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <h3 className="text-sm font-medium text-white line-clamp-1 group-hover:text-red-500 transition-colors">
-                      {manga.title}
-                    </h3>
-                    <div className="flex flex-wrap justify-between items-center mt-1 w-full">
-                      <div className="flex items-center text-xs text-gray-400">
-                        <span>{manga.type}</span>
-                        {manga.latestChapter && (
-                          <>
-                            <span className="mx-1">•</span>
-                            <span className="line-clamp-1">
-                              {manga.latestChapter.title}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                <Link to={`/comics/${manga.id}`} className="group block min-w-0">
+                  <div className="relative mb-2 aspect-[2/3] overflow-hidden rounded-xl bg-[#17181c] ring-1 ring-white/[0.07] transition group-hover:ring-white/20">
+                    <img
+                      src={manga.imageUrl || "/LY-logo.png"}
+                      alt={manga.title}
+                      loading={index > 5 ? "lazy" : "eager"}
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.045]"
+                      onError={(event) => {
+                        event.currentTarget.src = "/LY-logo.png";
+                        event.currentTarget.className += " object-contain bg-[#111216] p-8";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/15" />
+                    <span className="absolute right-2 top-2 rounded-md bg-black/55 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-white/85 backdrop-blur">
+                      {manga.isColored ? "Color" : "B&W"}
+                    </span>
+                    <span className="absolute bottom-2 left-2 text-[10px] font-medium uppercase tracking-wide text-white/80">
+                      {manga.type}
+                    </span>
+                  </div>
+                  <h2 className="line-clamp-1 text-sm font-semibold text-white/90 transition group-hover:text-white">
+                    {manga.title}
+                  </h2>
+                  <p className="mt-1 line-clamp-1 text-xs text-white/45">
+                    {manga.latestChapter?.title || "Explore title"}
+                  </p>
+                </Link>
               </motion.div>
-            )}
-
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 my-12">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handlePrevPage}
-                  disabled={page === 1}
-                  className="border-gray-700 hover:bg-gray-800 hover:text-red-500 text-red-500"
-                >
-                  <ChevronLeft className="h-5 w-5 text-red-500" />
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (page <= 3) {
-                      pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-
-                    return (
-                      <Button
-                        key={i}
-                        variant={page === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                          setPage(pageNum);
-                        }}
-                        className={
-                          page === pageNum
-                            ? "bg-red-600 hover:bg-red-700 text-white"
-                            : "border-gray-700 hover:bg-gray-800 hover:text-red-500 text-red-500"
-                        }
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleNextPage}
-                  disabled={page === totalPages}
-                  className="border-gray-700 hover:bg-gray-800 hover:text-red-500 text-red-500"
-                >
-                  <ChevronRight className="h-5 w-5 text-red-500" />
-                </Button>
-              </div>
-            )}
-          </>
+            ))}
+          </motion.div>
+        ) : (
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-14 text-center">
+            <Search className="mx-auto h-6 w-6 text-white/30" />
+            <p className="mt-3 text-sm text-white/55">No titles match this search.</p>
+          </div>
         )}
-      </main>
-    </>
+
+        {pageCount > 1 && (
+          <nav aria-label="Collection pages" className="mt-10 flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => changePage(page - 1)}
+              disabled={page === 1}
+              aria-label="Previous page"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-white/10 text-white/70 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="px-3 text-xs tabular-nums text-white/50">Page {page} of {pageCount}</span>
+            <button
+              type="button"
+              onClick={() => changePage(page + 1)}
+              disabled={page === pageCount}
+              aria-label="Next page"
+              className="grid h-10 w-10 place-items-center rounded-lg border border-white/10 text-white/70 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </nav>
+        )}
+      </div>
+    </main>
   );
 }

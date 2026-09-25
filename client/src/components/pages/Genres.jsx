@@ -8,42 +8,40 @@ import Navbar from "../ui/Navbar";
 import Skeleton from "@mui/material/Skeleton";
 import { motion } from "framer-motion";
 
+const API_BASE_URL = "https://wajik-anime-api.vercel.app";
+const genreColors = {
+  action: "from-red-900 to-orange-900",
+  adventure: "from-green-900 to-emerald-800",
+  comedy: "from-yellow-800 to-amber-900",
+  demons: "from-gray-900 to-slate-800",
+  drama: "from-blue-900 to-indigo-900",
+  fantasy: "from-purple-900 to-violet-900",
+  horror: "from-gray-900 to-slate-800",
+  mystery: "from-indigo-900 to-purple-900",
+  romance: "from-pink-900 to-rose-900",
+  "sci-fi": "from-cyan-900 to-blue-900",
+  "slice-of-life": "from-emerald-900 to-green-900",
+  sports: "from-orange-900 to-amber-900",
+  supernatural: "from-violet-900 to-purple-900",
+  thriller: "from-red-900 to-rose-900",
+  mecha: "from-gray-800 to-gray-900",
+  music: "from-blue-800 to-indigo-800",
+  psychological: "from-purple-800 to-indigo-900",
+  historical: "from-amber-900 to-yellow-800",
+  school: "from-blue-900 to-sky-800",
+};
+
 export default function Genres() {
   const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredGenres, setFilteredGenres] = useState([]);
   const navigate = useNavigate();
-  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
-
-  // Predefined color mappings for genres
-  const genreColors = {
-    action: "from-red-900 to-orange-900",
-    adventure: "from-green-900 to-emerald-800",
-    comedy: "from-yellow-800 to-amber-900",
-    demons: "from-gray-900 to-slate-800",
-    drama: "from-blue-900 to-indigo-900",
-    fantasy: "from-purple-900 to-violet-900",
-    horror: "from-gray-900 to-slate-800",
-    mystery: "from-indigo-900 to-purple-900",
-    romance: "from-pink-900 to-rose-900",
-    "sci-fi": "from-cyan-900 to-blue-900",
-    "slice-of-life": "from-emerald-900 to-green-900",
-    sports: "from-orange-900 to-amber-900",
-    supernatural: "from-violet-900 to-purple-900",
-    thriller: "from-red-900 to-rose-900",
-    mecha: "from-gray-800 to-gray-900",
-    music: "from-blue-800 to-indigo-800",
-    psychological: "from-purple-800 to-indigo-900",
-    historical: "from-amber-900 to-yellow-800",
-    school: "from-blue-900 to-sky-800",
-  };
-
   useEffect(() => {
     const fetchGenres = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${apiBaseUrl}/samehadaku/genres/`);
+        const response = await fetch(`${API_BASE_URL}/samehadaku/genres/`);
         const data = await response.json();
 
         // Map API data to component format
@@ -70,7 +68,7 @@ export default function Genres() {
     };
 
     fetchGenres();
-  }, [apiBaseUrl]);
+  }, []);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {

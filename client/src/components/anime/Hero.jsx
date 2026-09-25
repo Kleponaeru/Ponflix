@@ -7,29 +7,28 @@ import Skeleton from "@mui/material/Skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom"; // Add this import
 
+const API_BASE_URL = "https://wajik-anime-api.vercel.app";
+const DAYS_NAME = {
+  Senin: "Monday",
+  Selasa: "Tuesday",
+  Rabu: "Wednesday",
+  Kamis: "Thursday",
+  Jumat: "Friday",
+  Sabtu: "Saturday",
+  Minggu: "Sunday",
+};
+
 export default function Hero() {
   const [featuredAnime, setFeaturedAnime] = useState(null);
-  const [fade, setFade] = useState(true);
   const [progressKey, setProgressKey] = useState(0);
-  const apiBaseUrl = "https://wajik-anime-api.vercel.app";
   const navigate = useNavigate(); // Add this hook
 
   const ANIMATION_DURATION = 8;
 
-  const daysName = {
-    Senin: "Monday",
-    Selasa: "Tuesday",
-    Rabu: "Wednesday",
-    Kamis: "Thursday",
-    Jumat: "Friday",
-    Sabtu: "Saturday",
-    Minggu: "Sunday",
-  };
-
   useEffect(() => {
     const fetchAnimeData = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/samehadaku/ongoing?page=1`);
+        const response = await fetch(`${API_BASE_URL}/samehadaku/ongoing?page=1`);
         const data = await response.json();
         const animeList = data.data.animeList;
 
@@ -37,7 +36,7 @@ export default function Hero() {
           const randomIndex = Math.floor(Math.random() * animeList.length);
           const anime = animeList[randomIndex];
           const englishReleaseDay =
-            daysName[anime.releaseDay] || anime.releaseDay;
+            DAYS_NAME[anime.releaseDay] || anime.releaseDay;
           return {
             id: anime.animeId,
             title: anime.title,
@@ -53,10 +52,8 @@ export default function Hero() {
         setProgressKey(1);
 
         const interval = setInterval(() => {
-          setFade(false);
           setTimeout(() => {
             setFeaturedAnime(pickRandomAnime());
-            setFade(true);
             setProgressKey((prev) => prev + 1);
           }, 500);
         }, ANIMATION_DURATION * 1000);
@@ -76,7 +73,7 @@ export default function Hero() {
     };
 
     fetchAnimeData();
-  }, [apiBaseUrl]);
+  }, []);
 
   // Navigate to Stream page with the featured anime's ID
   const handleStreamClick = () => {

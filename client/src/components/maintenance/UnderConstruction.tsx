@@ -1,88 +1,32 @@
-import React from "react";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { ArrowRight, Clapperboard, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function UnderConstruction() {
-  const handleBackToDashboard = () => {
-    window.location.href = "/";
-  };
-
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Ambient gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-red-950/20 via-black to-black"></div>
+    <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#08090b] px-4 pb-10 pt-24 text-center text-white">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_75%_15%,rgba(229,9,20,0.18),transparent_42%),linear-gradient(145deg,#111216,#08090b_58%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-black/60 to-transparent" />
 
-      {/* Subtle grid pattern */}
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-                         linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px)`,
-          backgroundSize: "50px 50px",
-        }}
-      ></div>
-
-      {/* Content */}
-      <div className="relative z-10 max-w-2xl w-full text-center space-y-8">
-        {/* Icon with glow effect */}
-        <div className="flex justify-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-red-600 blur-3xl opacity-30 animate-pulse"></div>
-            <AlertCircle
-              className="w-24 h-24 text-red-600 relative"
-              strokeWidth={1.5}
-            />
-          </div>
+      <section className="max-w-xl">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-white/10 bg-white/[0.05] shadow-2xl shadow-black/30">
+          <Clapperboard className="h-7 w-7 text-[#ff5661]" />
         </div>
-
-        {/* Title */}
-        <div className="space-y-4">
-          <h1 className="text-5xl md:text-7xl font-bold text-white tracking-tight">
-            Under Construction
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-400 font-light">
-            We're working on something amazing
-          </p>
-        </div>
-
-        {/* Description */}
-        <p className="text-gray-500 text-lg max-w-md mx-auto leading-relaxed">
-          This page is currently being built. Check back soon for an incredible
-          experience.
+        <p className="mt-7 inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#ff6670]">
+          <Sparkles className="h-3.5 w-3.5" /> Coming soon to Ponflix
         </p>
-
-        {/* Button */}
-        <div className="pt-4">
-          <button
-            onClick={handleBackToDashboard}
-            className="group relative inline-flex items-center gap-3 px-6 py-3 bg-white text-black font-semibold text-lg rounded-md overflow-hidden transition-all duration-300 hover:bg-red-600 hover:text-white hover:scale-105"
-          >
-            <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-            <span>Back to Dashboard</span>
-
-            {/* Shine effect on hover */}
-            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-          </button>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="pt-8 space-y-3">
-          <div className="flex justify-center gap-2">
-            <div className="w-2 h-2 bg-red-600 rounded-full animate-bounce"></div>
-            <div
-              className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
-              style={{ animationDelay: "0.1s" }}
-            ></div>
-            <div
-              className="w-2 h-2 bg-red-600 rounded-full animate-bounce"
-              style={{ animationDelay: "0.2s" }}
-            ></div>
-          </div>
-          <p className="text-gray-600 text-sm">Building your experience...</p>
-        </div>
-      </div>
-
-      {/* Bottom fade effect */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
-    </div>
+        <h1 className="mt-3 text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
+          A new world is in the works.
+        </h1>
+        <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-white/55 sm:text-base">
+          We’re getting the anime collection ready. In the meantime, there are plenty of comics waiting for you.
+        </p>
+        <Link
+          to="/comics"
+          className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-white px-5 text-sm font-bold text-black transition hover:bg-white/85"
+        >
+          Explore comics <ArrowRight className="h-4 w-4" />
+        </Link>
+      </section>
+    </main>
   );
 }

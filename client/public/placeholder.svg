@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-label="Cover unavailable">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#25262b" />
+      <stop offset="1" stop-color="#0b0c0f" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.8" cy="0.1" r="0.8">
+      <stop offset="0" stop-color="#e50914" stop-opacity="0.38" />
+      <stop offset="1" stop-color="#e50914" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="600" fill="url(#bg)" />
+  <rect width="400" height="600" fill="url(#glow)" />
+  <path d="M0 470 400 270v330H0Z" fill="#08090b" fill-opacity="0.4" />
+  <circle cx="200" cy="260" r="56" fill="#fff" fill-opacity="0.09" stroke="#fff" stroke-opacity="0.15" />
+  <path d="m188 230 46 30-46 30Z" fill="#fff" fill-opacity="0.8" />
+  <text x="200" y="410" fill="#fff" fill-opacity="0.55" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="4" text-anchor="middle">PONFLIX</text>
+  <text x="200" y="440" fill="#fff" fill-opacity="0.3" font-family="Arial, sans-serif" font-size="10" letter-spacing="2" text-anchor="middle">COVER UNAVAILABLE</text>
+</svg>

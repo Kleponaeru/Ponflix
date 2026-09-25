@@ -1,85 +1,58 @@
-import { MangaListItem } from "@/types/manga-list";
+import type { MangaListItem } from "@/types/manga-list";
 import MangaRowHeader from "./MangaRowHeader";
 import MangaRowScroller from "./MangaRowScroller";
 import MangaCard from "../MangaCard/MangaCard";
 import { useMangaRowScroll } from "@/hooks/useMangaRowScroll";
-import Skeleton from "@mui/material/Skeleton";
-import { AccentColor } from "@/config/mangaAccentColors";
 
-interface MangaRowProps {
+interface Props {
   title: string;
   mangas: MangaListItem[];
-  accentColor?: AccentColor;
   genreId?: string;
   isLoading?: boolean;
+}
+
+function RowSkeleton() {
+  return (
+    <div className="content-shell overflow-hidden" aria-hidden="true">
+      <div className="flex gap-3 md:gap-5">
+        {Array.from({ length: 7 }).map((_, index) => (
+          <div className="w-[clamp(9.25rem,17vw,13.25rem)] shrink-0" key={index}>
+            <div className="aspect-[2/3] animate-pulse rounded-xl bg-white/[0.06]" />
+            <div className="mt-3 h-3 w-3/4 animate-pulse rounded bg-white/[0.06]" />
+            <div className="mt-2 h-3 w-1/2 animate-pulse rounded bg-white/[0.04]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function MangaRow({
   title,
   mangas,
-  accentColor = "red",
   genreId,
   isLoading = false,
-}: MangaRowProps) {
-  const isOngoingOrCompleted =
-    title === "Ongoing Manga" || title === "Completed Manga";
-  const dotCount = isOngoingOrCompleted ? 5 : 3;
-  const scroll = useMangaRowScroll(dotCount);
+}: Props) {
+  const scroll = useMangaRowScroll();
 
   if (mangas.length === 0 && !isLoading) return null;
 
   return (
-    <section className="space-y-4 mt-8 md:mt-12 mb-10">
-      <MangaRowHeader
-        title={title}
-        genreId={genreId}
-        accentColor={accentColor}
-      />
-
+    <section className="space-y-3" aria-label={title}>
+      <MangaRowHeader title={title} genreId={genreId} />
       {isLoading ? (
-        <div className="px-4 md:px-12">
-          <div className="flex space-x-5 overflow-x-hidden">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                className="flex-shrink-0"
-                style={{
-                  width: "clamp(140px, 19vw, 230px)",
-                  height: "clamp(240px, 28vw, 380px)",
-                }}
-              >
-                <Skeleton
-                  variant="rectangular"
-                  width="100%"
-                  height="82%"
-                  sx={{ bgcolor: "grey.900", borderRadius: "12px" }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="80%"
-                  sx={{ bgcolor: "grey.900", mt: 1.5 }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="60%"
-                  sx={{ bgcolor: "grey.900" }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        <RowSkeleton />
       ) : (
         <MangaRowScroller
           ref={scroll.rowRef}
           canLeft={scroll.canLeft}
           canRight={scroll.canRight}
-          activeDot={scroll.activeDot}
           scroll={scroll.scroll}
-          dotCount={dotCount}
-          accentColor={accentColor}
         >
-          {mangas.map((manga: MangaListItem, index: number) => (
-            <MangaCard key={manga.id} manga={manga} index={index} />
+          {mangas.map((manga, index) => (
+            <div className="snap-start" key={manga.id}>
+              <MangaCard manga={manga} index={index} />
+            </div>
           ))}
         </MangaRowScroller>
       )}

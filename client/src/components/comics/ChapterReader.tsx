@@ -1,390 +1,384 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { JSX, useEffect, useState, useRef } from "react";
-import { extractSlug } from "@/utils/extractSlug";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-  Loader2,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
-  X,
   Home,
-  Book,
+  LoaderCircle,
   Menu,
+  X,
 } from "lucide-react";
+import { extractSlug } from "@/utils/extractSlug";
 
 interface ChapterData {
-  slug: string;
   title: string;
   images: string[];
-  nextChapter?: { slug: string; title: string };
-  prevChapter?: { slug: string; title: string };
-  mangaSlug: string;
+  nextChapter?: string;
+  prevChapter?: string;
+  chapters: { slug: string; title: string }[];
   mangaTitle: string;
 }
 
-export default function ChapterReader(): JSX.Element {
+const API_URL = "https://ponmics-api.necode.id/Comics-API/api.php";
+
+export default function ChapterReader() {
   const { id, chapterId } = useParams<{ id: string; chapterId: string }>();
   const navigate = useNavigate();
-
   const [chapter, setChapter] = useState<ChapterData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [showControls, setShowControls] = useState<boolean>(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
-  const [showChapterList, setShowChapterList] = useState<boolean>(false);
-  const timeoutRef = useRef<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [showChapterList, setShowChapterList] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const controlsTimeout = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!chapterId || !id) return;
+    if (!id || !chapterId) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError(false);
+    setChapter(null);
+    setCurrentImageIndex(0);
+    setShowChapterList(false);
+    setShowControls(true);
+    window.scrollTo({ top: 0, behavior: "auto" });
 
-    async function fetchChapter() {
+    const loadChapter = async () => {
       try {
-        const chapterRes = await fetch(
-          `https://ponmics-api.necode.id/Comics-API/api.php?chapter=${chapterId}`
+        const response = await fetch(
+          `${API_URL}?chapter=${encodeURIComponent(chapterId)}`,
+          { signal: controller.signal }
         );
-        const chapterJson = await chapterRes.json();
+        if (!response.ok) throw new Error("Chapter could not be loaded.");
+        const json = await response.json();
+        if (!json?.status || !json?.data) throw new Error("Invalid chapter response.");
 
-        // console.log("Full API Response:", chapterJson);
-
-        if (!chapterJson.status || !chapterJson.data) {
-          console.error("Invalid API response");
-          setLoading(false);
-          return;
-        }
-
-        const data = chapterJson.data;
-        const images: string[] =
-          Array.isArray(chapterJson.data.gambar) &&
-          chapterJson.data.gambar.length > 0
-            ? chapterJson.data.gambar.map((img: any) => img.url)
-            : [];
-        // console.log("Extracted images count:", images.length);
-        // console.log("First image URL:", images[0]);
-
-        const chapterData: ChapterData = {
-          slug: `/${id}-chapter-${chapterId}/`,
-          title: data.judul || "Unknown Chapter",
-          images: images,
-          nextChapter: data.navigasi?.selanjutnya
-            ? {
-                slug: data.navigasi.selanjutnya,
-                title: "Next Chapter",
-              }
-            : undefined,
-          prevChapter: data.navigasi?.sebelumnya
-            ? {
-                slug: data.navigasi.sebelumnya,
-                title: "Previous Chapter",
-              }
-            : undefined,
-          mangaSlug: id || "",
-          mangaTitle: data.info_komik?.judul || "Unknown Manga",
-        };
-
-        // console.log("Setting chapter data:", chapterData);
-        setChapter(chapterData);
-      } catch (error) {
-        console.error("Fetch error:", error);
+        const data = json.data;
+        const nextChapter = data.navigasi?.selanjutnya || undefined;
+        const prevChapter = data.navigasi?.sebelumnya || undefined;
+        setChapter({
+          title: data.judul || "Unknown chapter",
+          images: Array.isArray(data.gambar)
+            ? data.gambar.map((image: { url: string }) => image.url).filter(Boolean)
+            : [],
+          nextChapter,
+          prevChapter,
+          chapters: (data.info_komik?.chapter || []).map((item: any) => ({
+            slug: item.link_chapter,
+            title: item.judul_chapter,
+          })),
+          mangaTitle: data.info_komik?.judul || "Unknown comic",
+        });
+      } catch (loadError) {
+        if ((loadError as Error).name !== "AbortError") setError(true);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
-    }
+    };
 
-    fetchChapter();
+    loadChapter();
+    return () => controller.abort();
   }, [chapterId, id]);
 
-  const resetControlsTimeout = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    setShowControls(true);
-    timeoutRef.current = setTimeout(() => setShowControls(false), 3000);
-  };
+  const navigateChapter = useCallback(
+    (chapterPath?: string) => {
+      if (!chapterPath || !id) return;
+      navigate(`/comics/${id}/chapter/${extractSlug(chapterPath)}`);
+    },
+    [id, navigate]
+  );
 
-  useEffect(() => {
-    resetControlsTimeout();
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+  const showControlsBriefly = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimeout.current) window.clearTimeout(controlsTimeout.current);
+    controlsTimeout.current = window.setTimeout(() => setShowControls(false), 3500);
   }, []);
 
-  const handleMouseMove = () => {
-    resetControlsTimeout();
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "ArrowLeft" && chapter?.prevChapter) {
-      navigate(`/comics/${id}/chapter/${extractSlug(chapter.prevChapter.slug)}`);
-    } else if (e.key === "ArrowRight" && chapter?.nextChapter) {
-      navigate(`/comics/${id}/chapter/${extractSlug(chapter.nextChapter.slug)}`);
-    } else if (e.key === "Escape") {
-      navigate(`/comics/${chapter?.mangaSlug}`);
-    }
-  };
+  useEffect(() => {
+    showControlsBriefly();
+    return () => {
+      if (controlsTimeout.current) window.clearTimeout(controlsTimeout.current);
+    };
+  }, [showControlsBriefly, chapterId]);
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [chapter]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!chapter?.images.length) return;
-
-      const images = document.querySelectorAll(".manga-page");
-      const viewportMiddle = window.innerHeight / 2;
-
-      for (let i = 0; i < images.length; i++) {
-        const rect = images[i].getBoundingClientRect();
-        if (rect.top <= viewportMiddle && rect.bottom >= viewportMiddle) {
-          setCurrentImageIndex(i);
-          break;
+    const updateProgress = () => {
+      const pages = document.querySelectorAll<HTMLElement>("[data-reader-page]");
+      const middle = window.innerHeight / 2;
+      for (let index = 0; index < pages.length; index += 1) {
+        const bounds = pages[index].getBoundingClientRect();
+        if (bounds.top <= middle && bounds.bottom >= middle) {
+          setCurrentImageIndex(index);
+          return;
         }
       }
     };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    return () => window.removeEventListener("scroll", updateProgress);
   }, [chapter]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (showChapterList) setShowChapterList(false);
+        else navigate(`/comics/${id}`);
+      }
+      if (event.key === "ArrowLeft") navigateChapter(chapter?.prevChapter);
+      if (event.key === "ArrowRight") navigateChapter(chapter?.nextChapter);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [chapter, id, navigate, navigateChapter, showChapterList]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-red-600" />
-      </div>
+      <main className="flex min-h-screen items-center justify-center bg-[#08090b]">
+        <LoaderCircle className="h-9 w-9 animate-spin text-[#e50914]" />
+      </main>
     );
   }
 
-  if (!chapter) {
+  if (error || !chapter) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-        <p className="text-xl text-gray-400 mb-4">Failed to load chapter</p>
-        <button
-          onClick={() => navigate(-1)}
-          className="px-6 py-2 bg-red-600 rounded-md hover:bg-red-700 transition"
-        >
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
-  if (!chapter.images || chapter.images.length === 0) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-        <p className="text-xl text-gray-400 mb-4">
-          No images available for this chapter
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#08090b] px-4 text-center text-white">
+        <BookOpen className="h-8 w-8 text-[#e50914]" />
+        <h1 className="mt-4 text-xl font-semibold">Chapter unavailable</h1>
+        <p className="mt-2 max-w-sm text-sm leading-6 text-white/50">
+          This chapter couldn’t be loaded. It may have moved or the service may be temporarily unavailable.
         </p>
         <button
-          onClick={() => navigate(-1)}
-          className="px-6 py-2 bg-red-600 rounded-md hover:bg-red-700 transition"
+          type="button"
+          onClick={() => navigate(`/comics/${id}`)}
+          className="mt-5 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/85"
         >
-          Go Back
+          Back to title
         </button>
-      </div>
+      </main>
+    );
+  }
+
+  if (!chapter.images.length) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#08090b] px-4 text-center text-white">
+        <BookOpen className="h-8 w-8 text-[#e50914]" />
+        <h1 className="mt-4 text-xl font-semibold">No pages available</h1>
+        <p className="mt-2 text-sm text-white/50">There are no readable pages for this chapter yet.</p>
+        <button
+          type="button"
+          onClick={() => navigate(`/comics/${id}`)}
+          className="mt-5 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-white/85"
+        >
+          Back to title
+        </button>
+      </main>
     );
   }
 
   const progress = ((currentImageIndex + 1) / chapter.images.length) * 100;
 
   return (
-    <div
-      className="min-h-screen bg-black text-white"
-      onMouseMove={handleMouseMove}
+    <main
+      className="min-h-screen bg-[#08090b] text-white"
+      onMouseMove={showControlsBriefly}
+      onTouchStart={showControlsBriefly}
     >
-      {/* Top Controls Bar */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          showControls
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-full opacity-0"
+        className={`fixed inset-x-0 top-0 z-50 transition duration-300 ${
+          showControls ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
         }`}
       >
-        <div className="bg-gradient-to-b from-black via-black/80 to-transparent px-4 md:px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3 md:gap-4">
+        <div className="border-b border-white/[0.06] bg-[#08090b]/85 px-3 py-3 backdrop-blur-xl sm:px-5">
+          <div className="content-shell flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
               <button
-                onClick={() => navigate(`/comics/${chapter.mangaSlug}`)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                aria-label="Back"
+                type="button"
+                onClick={() => navigate(`/comics/${id}`)}
+                aria-label="Back to title details"
+                className="shrink-0 rounded-full p-2 transition hover:bg-white/10"
               >
-                <X className="w-5 h-5 md:w-6 md:h-6" />
+                <X className="h-5 w-5" />
               </button>
               <div className="min-w-0">
-                <h1 className="text-sm md:text-lg font-semibold truncate">
-                  {chapter.title}
-                </h1>
-                <p className="text-xs md:text-sm text-gray-400 truncate">
-                  {chapter.mangaTitle}
-                </p>
+                <h1 className="truncate text-sm font-semibold sm:text-base">{chapter.title}</h1>
+                <p className="truncate text-xs text-white/45">{chapter.mangaTitle}</p>
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1">
               <button
-                onClick={() => setShowChapterList(!showChapterList)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                aria-label="Chapter list"
+                type="button"
+                onClick={() => setShowChapterList(true)}
+                aria-label="Open chapter list"
+                className="rounded-full p-2 transition hover:bg-white/10"
               >
-                <Menu className="w-5 h-5" />
+                <Menu className="h-5 w-5" />
               </button>
               <button
-                onClick={() => navigate("/")}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors hidden sm:flex"
-                aria-label="Home"
+                type="button"
+                onClick={() => navigate("/comics")}
+                aria-label="Browse comics"
+                className="hidden rounded-full p-2 transition hover:bg-white/10 sm:block"
               >
-                <Home className="w-5 h-5" />
+                <Home className="h-5 w-5" />
               </button>
               <button
-                onClick={() => navigate(`/comics/${chapter.mangaSlug}`)}
-                className="p-2 hover:bg-white/10 rounded-full transition-colors hidden sm:flex"
-                aria-label="Manga details"
+                type="button"
+                onClick={() => navigate(`/comics/${id}`)}
+                aria-label="Title details"
+                className="hidden rounded-full p-2 transition hover:bg-white/10 sm:block"
               >
-                <Book className="w-5 h-5" />
+                <BookOpen className="h-5 w-5" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Reading Area */}
-      <div className="max-w-4xl mx-auto px-2 md:px-4 py-20">
-        {chapter.images.map((img, index) => (
-          <div key={index} className="mb-1">
+      <section className="mx-auto max-w-4xl px-0 pb-36 pt-16 sm:px-4 sm:pt-20">
+        {chapter.images.map((image, index) => (
+          <div data-reader-page key={`${chapterId}-${index}`} className="mb-1 bg-black">
             <img
-              src={img}
+              src={image}
               alt={`Page ${index + 1}`}
-              className="manga-page w-full h-auto"
-              loading={index < 3 ? "eager" : "lazy"}
+              className="h-auto w-full"
+              loading={index < 2 ? "eager" : "lazy"}
+              decoding="async"
             />
           </div>
         ))}
 
-        {/* End of Chapter Message */}
-        <div className="text-center py-16">
-          <h2 className="text-2xl font-bold mb-4">End of Chapter</h2>
+        <div className="mx-3 mt-8 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-5 py-12 text-center sm:mx-0 sm:py-16">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#ff6670]">
+            You’re all caught up
+          </p>
+          <h2 className="mb-5 mt-2 text-2xl font-semibold">End of chapter</h2>
           {chapter.nextChapter ? (
             <button
-              onClick={() => {
-                navigate(
-                  `/comics/${id}/chapter/${extractSlug(chapter.nextChapter!.slug)}`
-                );
-              }}
-              className="px-8 py-3 bg-red-600 hover:bg-red-700 rounded-md font-medium transition-all hover:scale-105"
+              type="button"
+              onClick={() => navigateChapter(chapter.nextChapter)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-black transition hover:bg-white/85"
             >
-              Continue to Next Chapter
+              Continue reading <ChevronRight className="h-4 w-4" />
             </button>
           ) : (
-            <p className="text-gray-400">You've reached the latest chapter</p>
+            <p className="text-sm text-white/45">You’ve reached the latest chapter.</p>
           )}
         </div>
-      </div>
+      </section>
 
-      {/* Bottom Navigation Controls */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ${
-          showControls
-            ? "translate-y-0 opacity-100"
-            : "translate-y-full opacity-0"
+        className={`fixed inset-x-0 bottom-0 z-50 transition duration-300 ${
+          showControls ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
         }`}
       >
-        <div className="bg-gradient-to-t from-black via-black/80 to-transparent px-4 md:px-6 py-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="flex justify-between text-xs text-gray-400 mb-2">
-                <span>Page {currentImageIndex + 1}</span>
-                <span>{chapter.images.length} pages</span>
-              </div>
-              <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-red-600 transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+        <div className="border-t border-white/[0.07] bg-[#101115]/90 px-4 py-4 backdrop-blur-xl sm:px-6 sm:py-5">
+          <div className="content-shell">
+            <div className="mb-3 flex justify-between text-xs text-white/45">
+              <span>Page {currentImageIndex + 1}</span>
+              <span>{chapter.images.length} pages</span>
             </div>
-
-            {/* Navigation Buttons */}
-            <div className="flex items-center justify-between gap-3 md:gap-4">
+            <div
+              role="progressbar"
+              aria-label="Reading progress"
+              aria-valuemin={0}
+              aria-valuemax={chapter.images.length}
+              aria-valuenow={currentImageIndex + 1}
+              className="mb-4 h-1 overflow-hidden rounded-full bg-white/10"
+            >
+              <div
+                className="h-full bg-[#e50914] transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3">
               <button
-                onClick={() => {
-                  if (chapter.prevChapter) {
-                    navigate(
-                      `/comics/${id}/chapter/${extractSlug(chapter.prevChapter.slug)}`
-                    );
-                  }
-                }}
+                type="button"
+                onClick={() => navigateChapter(chapter.prevChapter)}
                 disabled={!chapter.prevChapter}
-                className={`flex items-center gap-2 px-4 md:px-6 py-3 rounded-md font-medium transition-all ${
-                  chapter.prevChapter
-                    ? "bg-white/10 hover:bg-white/20"
-                    : "bg-white/5 text-gray-600 cursor-not-allowed"
-                }`}
+                aria-label="Previous chapter"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-sm font-medium transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 sm:px-5"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Previous</span>
               </button>
-
-              <div className="flex-1 text-center min-w-0">
-                {chapter.nextChapter ? (
-                  <div className="text-sm text-gray-400">
-                    <span className="text-white">Next Chapter Available</span>
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-400">Latest chapter</div>
-                )}
-              </div>
-
+              <span className="min-w-0 flex-1 truncate text-center text-xs text-white/45 sm:text-sm">
+                {chapter.mangaTitle}
+              </span>
               <button
-                onClick={() => {
-                  if (chapter.nextChapter) {
-                    navigate(
-                      `/comics/${id}/chapter/${extractSlug(chapter.nextChapter.slug)}`
-                    );
-                  }
-                }}
+                type="button"
+                onClick={() => navigateChapter(chapter.nextChapter)}
                 disabled={!chapter.nextChapter}
-                className={`flex items-center gap-2 px-4 md:px-6 py-3 rounded-md font-medium transition-all ${
-                  chapter.nextChapter
-                    ? "bg-red-600 hover:bg-red-700 hover:scale-105"
-                    : "bg-white/5 text-gray-600 cursor-not-allowed"
-                }`}
+                aria-label="Next chapter"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-3 text-sm font-semibold text-black transition hover:bg-white/85 disabled:cursor-not-allowed disabled:opacity-30 sm:px-5"
               >
                 <span className="hidden sm:inline">Next</span>
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Keyboard Shortcuts Hint */}
-      <div
-        className={`fixed bottom-24 right-4 text-xs text-gray-500 transition-opacity duration-300 hidden md:block ${
-          showControls ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <div className="bg-black/50 backdrop-blur-sm px-3 py-2 rounded-lg space-y-1">
-          <p>← → Navigate chapters</p>
-          <p>ESC Exit reader</p>
-        </div>
-      </div>
-
-      {/* Chapter List Overlay */}
       {showChapterList && (
         <div
-          className="fixed inset-0 bg-black/90 z-40 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reader-chapter-list-title"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
           onClick={() => setShowChapterList(false)}
         >
-          <div
-            className="bg-gray-900 rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-auto"
-            onClick={(e) => e.stopPropagation()}
+          <section
+            className="max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#111216] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
           >
-            <h2 className="text-2xl font-bold mb-4">Chapters</h2>
-            <div className="space-y-2">
-              <div className="text-center text-gray-400 py-8">
-                Chapter list will be loaded from your API
+            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#ff6670]">
+                  {chapter.mangaTitle}
+                </p>
+                <h2 id="reader-chapter-list-title" className="mt-1 text-lg font-semibold">
+                  Choose a chapter
+                </h2>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowChapterList(false)}
+                aria-label="Close chapter list"
+                className="rounded-full p-2 text-white/55 transition hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-          </div>
+            <div className="max-h-[calc(80vh-5rem)] overflow-auto p-2">
+              {chapter.chapters.length ? (
+                chapter.chapters.map((item) => {
+                  const slug = extractSlug(item.slug);
+                  return (
+                    <button
+                      type="button"
+                      key={item.slug}
+                      onClick={() => {
+                        setShowChapterList(false);
+                        navigateChapter(item.slug);
+                      }}
+                      className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm transition hover:bg-white/[0.07] ${
+                        slug === chapterId ? "bg-white/[0.08] text-white" : "text-white/65"
+                      }`}
+                    >
+                      <span className="truncate">{item.title}</span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="px-4 py-8 text-center text-sm text-white/45">
+                  No chapter list is available.
+                </p>
+              )}
+            </div>
+          </section>
         </div>
       )}
-    </div>
+    </main>
   );
 }

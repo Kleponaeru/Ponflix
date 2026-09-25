@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MangaListItem } from "@/types/manga-list";
 import { mapMangaList } from "@/lib/mappers/manga-list";
 
 export type MangaData = {
+  featured: MangaListItem[];
   manga: MangaListItem[];
   manhwa: MangaListItem[];
   manhua: MangaListItem[];
@@ -12,6 +13,7 @@ const API_BASE_URL = "https://ponmics-api.necode.id/Comics-API";
 
 export function useLatestMangas() {
   const [data, setData] = useState<MangaData>({
+    featured: [],
     manga: [],
     manhwa: [],
     manhua: [],
@@ -20,7 +22,7 @@ export function useLatestMangas() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async (): Promise<void> => {
+  const load = useCallback(async (): Promise<void> => {
     setLoading(true);
     setError(null);
 
@@ -52,27 +54,27 @@ export function useLatestMangas() {
       );
 
       setData({
+        featured: mapped.slice(0, 5),
         manga: mapped.filter((m: MangaListItem) => m.type === "Manga"),
         manhwa: mapped.filter((m: MangaListItem) => m.type === "Manhwa"),
         manhua: mapped.filter((m: MangaListItem) => m.type === "Manhua"),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
-      setData({ manga: [], manhwa: [], manhua: [] });
+      setData({ featured: [], manga: [], manhwa: [], manhua: [] });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   return {
     data,
     loading,
     error,
     reload: load,
-    apiBaseUrl: API_BASE_URL,
   };
 }

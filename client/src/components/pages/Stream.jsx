@@ -128,7 +128,7 @@ export default function Stream() {
           throw new Error("No streaming URL found");
         }
       }
-    } catch (error) {
+    } catch {
       // console.error("Error fetching streaming URL:", error);
       setError("Failed to load the episode. Please try a different server.");
       setSelectedUrl(null);

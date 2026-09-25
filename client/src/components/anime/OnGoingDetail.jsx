@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,7 +24,6 @@ export default function OngoingDetail() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredData, setFilteredData] = useState([]);
   const [sortOption, setSortOption] = useState("default");
   const navigate = useNavigate();
 
@@ -113,12 +112,10 @@ export default function OngoingDetail() {
 
         console.log(`Total items for ongoing: ${allAnime.length}`);
         setAllAnimeData(allAnime);
-        setFilteredData(allAnime);
         setTotalPages(Math.ceil(allAnime.length / itemsPerPage));
       } catch (error) {
         console.error("Error fetching all ongoing anime:", error);
         setAllAnimeData([]);
-        setFilteredData([]);
         setTotalPages(0);
       } finally {
         setInitialLoading(false);
@@ -128,33 +125,22 @@ export default function OngoingDetail() {
     fetchAllData();
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredData(allAnimeData);
-    } else {
-      const filtered = allAnimeData.filter((anime) =>
-        anime.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredData(filtered);
-    }
-    setPage(1);
-  }, [searchQuery, allAnimeData]);
-
-  useEffect(() => {
-    const sorted = [...filteredData];
-
+  const filteredData = useMemo(() => {
+    const filtered = allAnimeData.filter((anime) =>
+      anime.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    );
     switch (sortOption) {
       case "title-asc":
-        sorted.sort((a, b) => a.title.localeCompare(b.title));
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
         break;
       case "title-desc":
-        sorted.sort((a, b) => b.title.localeCompare(a.title));
+        filtered.sort((a, b) => b.title.localeCompare(a.title));
         break;
       case "episodes-desc":
-        sorted.sort((a, b) => b.episodes - a.episodes);
+        filtered.sort((a, b) => b.episodes - a.episodes);
         break;
       case "latest-desc":
-        sorted.sort(
+        filtered.sort(
           (a, b) =>
             new Date(b.latestReleaseDate) - new Date(a.latestReleaseDate)
         );
@@ -163,9 +149,8 @@ export default function OngoingDetail() {
         break;
     }
 
-    setFilteredData(sorted);
-    setPage(1);
-  }, [sortOption]);
+    return filtered;
+  }, [allAnimeData, searchQuery, sortOption]);
 
   useEffect(() => {
     setLoading(true);
@@ -255,7 +240,10 @@ export default function OngoingDetail() {
           <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={sortOption}
-              onChange={(e) => setSortOption(e.target.value)}
+              onChange={(e) => {
+                setSortOption(e.target.value);
+                setPage(1);
+              }}
               className="bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               <option value="default">Sort By: Default</option>
@@ -270,7 +258,10 @@ export default function OngoingDetail() {
                 type="text"
                 placeholder="Search anime..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(1);
+                }}
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />

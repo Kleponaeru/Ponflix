@@ -1,373 +1,242 @@
-import { useState, useEffect } from "react";
-import { Play, Info, Star, TrendingUp, Sparkles, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { normalizeTitle } from "@/utils/title";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Info,
+  LoaderCircle,
+  Play,
+  Sparkles,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchFirstChapterSlug } from "@/services/mangaService";
+import type { MangaListItem } from "@/types/manga-list";
 
-// Extended interface for banner display
-interface BannerManga {
-  id: string;
-  title: string;
-  imageUrl: string;
-  rating?: number | null;
-  type: string;
-  status: string;
-  description: string;
-  genres: string[];
-  isColored: boolean;
-  latestChapter?: {
-    title: string;
-    slug: string;
-    releasedAt: string;
-  };
-}
-
-interface MangaHeroBannerProps {
-  apiUrl: string;
-  autoPlayInterval?: number;
-  maxItems?: number;
+interface Props {
+  featured: MangaListItem[];
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
 }
 
 export default function MangaHeroBanner({
-  apiUrl,
-  autoPlayInterval = 5000,
-  maxItems = 5,
-}: MangaHeroBannerProps) {
+  featured,
+  isLoading,
+  error,
+  onRetry,
+}: Props) {
   const navigate = useNavigate();
-  const [mangas, setMangas] = useState<BannerManga[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
 
   useEffect(() => {
-    const fetchMangas = async () => {
-      try {
-        setIsLoading(true);
-        // Check if apiUrl already has query parameters
-        const separator = apiUrl.includes("?") ? "&" : "?";
-        const url = apiUrl.includes("latest=")
-          ? apiUrl
-          : `${apiUrl}${separator}latest=1&page=1`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch manga data");
-        }
-
-        const data = await response.json();
-
-        // Get the komik array from the API response
-        const komikList = data?.data?.komik || [];
-
-        if (!Array.isArray(komikList)) {
-          throw new Error("Invalid API response format");
-        }
-
-        // Transform API data to match our interface
-        const transformedMangas: BannerManga[] = komikList
-          .slice(0, maxItems)
-          .map((manga: any) => {
-            // Extract slug from link for ID
-            const slug =
-              manga.link?.split("/komik/")[1]?.replace(/\//g, "") ||
-              manga.link?.split("/").filter(Boolean).pop() ||
-              "unknown";
-
-            const isColored = manga.warna === "Warna";
-            const title = normalizeTitle(manga.judul, manga.link, 8);
-
-            const latestChapter = manga.chapter?.[0]
-              ? {
-                  title: manga.chapter[0].judul || "Unknown Chapter",
-                  slug:
-                    manga.chapter[0].link?.split("/").filter(Boolean).pop() ||
-                    "",
-                  releasedAt: manga.chapter[0].tanggal_rilis || "Unknown",
-                }
-              : undefined;
-
-            return {
-              id: slug,
-              title,
-              description: latestChapter
-                ? `Latest chapter: ${latestChapter.title}. Updated ${latestChapter.releasedAt}.`
-                : "No description available.",
-              imageUrl: manga.gambar || "",
-              rating: null,
-              type: manga.tipe || "Manga",
-              status: "Ongoing",
-              isColored,
-              genres: isColored ? ["Colored"] : ["Black & White"],
-              latestChapter,
-            };
-          });
-
-        setMangas(transformedMangas);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching manga:", err);
-        setError("Failed to load featured manga");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMangas();
-  }, [apiUrl, maxItems]);
+    if (currentIndex >= featured.length) setCurrentIndex(0);
+  }, [currentIndex, featured.length]);
 
   useEffect(() => {
-    if (!isAutoPlaying || mangas.length === 0) return;
+    if (isPaused || featured.length < 2) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % mangas.length);
-    }, autoPlayInterval);
+    const interval = window.setInterval(() => {
+      setCurrentIndex((index) => (index + 1) % featured.length);
+    }, 6500);
+    return () => window.clearInterval(interval);
+  }, [featured.length, isPaused]);
 
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, mangas.length, autoPlayInterval]);
+  const currentManga = featured[currentIndex];
 
-  const handleReadNow = async () => {
-    const manga = mangas[currentIndex];
-    if (!manga) return;
-
+  const openFirstChapter = async () => {
+    if (!currentManga || isOpening) return;
+    setIsOpening(true);
     try {
-      const firstChapterSlug = await fetchFirstChapterSlug(manga.id);
+      const chapterSlug = await fetchFirstChapterSlug(currentManga.id);
       navigate(
-        firstChapterSlug
-          ? `/comics/${manga.id}/chapter/${firstChapterSlug}`
-          : `/comics/${manga.id}`
+        chapterSlug
+          ? `/comics/${currentManga.id}/chapter/${chapterSlug}`
+          : `/comics/${currentManga.id}`
       );
-    } catch (error) {
-      console.error("Failed to find the first chapter:", error);
-      navigate(`/comics/${manga.id}`);
+    } catch (openError) {
+      console.error("Could not open the first chapter:", openError);
+      navigate(`/comics/${currentManga.id}`);
+    } finally {
+      setIsOpening(false);
     }
   };
 
-  const handleMoreInfo = () => {
-    const manga = mangas[currentIndex];
-    if (manga) navigate(`/comics/${manga.id}`);
-  };
-
-  // Loading state
   if (isLoading) {
     return (
-      <div className="relative w-full h-[500px] md:h-[600px] bg-gradient-to-b from-gray-900 to-black">
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-          <Loader2 className="w-12 h-12 text-purple-500 animate-spin" />
-          <p className="text-gray-400 text-lg">Loading featured manga...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error || mangas.length === 0) {
-    return (
-      <div className="relative w-full h-[500px] md:h-[600px] bg-gradient-to-b from-gray-900 to-black">
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-          <div className="text-red-500 text-lg">
-            {error || "No featured manga available"}
+      <section
+        aria-label="Featured comics loading"
+        className="relative min-h-[31rem] overflow-hidden bg-[#111216] pt-16 md:min-h-[40rem]"
+      >
+        <div className="content-shell flex min-h-[29rem] items-end pb-16 md:min-h-[38rem] md:pb-24">
+          <div className="w-full max-w-xl space-y-5">
+            <div className="h-4 w-36 animate-pulse rounded bg-white/10" />
+            <div className="h-12 w-4/5 animate-pulse rounded bg-white/10 md:h-16" />
+            <div className="h-4 w-64 animate-pulse rounded bg-white/10" />
+            <div className="h-11 w-44 animate-pulse rounded-lg bg-white/10" />
           </div>
-          <Button
-            onClick={() => window.location.reload()}
-            variant="outline"
-            className="text-white border-white/30"
-          >
-            Retry
-          </Button>
         </div>
-      </div>
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
+      </section>
     );
   }
 
-  const currentManga = mangas[currentIndex];
+  if (error || !currentManga) {
+    return (
+      <section className="content-shell flex min-h-[25rem] items-center pt-20">
+        <div className="max-w-lg rounded-2xl border border-white/10 bg-white/[0.035] p-7">
+          <Sparkles className="mb-4 h-6 w-6 text-[#e50914]" />
+          <h1 className="text-2xl font-semibold">Your next favorite is waiting.</h1>
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            {error || "Featured titles could not be loaded."}
+          </p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-5 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/85"
+          >
+            Try again
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const showPrevious = () =>
+    setCurrentIndex((index) => (index - 1 + featured.length) % featured.length);
+  const showNext = () => setCurrentIndex((index) => (index + 1) % featured.length);
 
   return (
-    <div
-      className="relative w-full h-[500px] md:h-[600px] overflow-hidden group"
-      onMouseEnter={() => setIsAutoPlaying(false)}
-      onMouseLeave={() => setIsAutoPlaying(true)}
+    <section
+      aria-label="Featured comics"
+      className="relative isolate min-h-[40rem] overflow-hidden bg-[#08090b] pt-16 md:min-h-[43rem]"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setIsPaused(false);
+        }
+      }}
     >
       <AnimatePresence mode="wait">
         <motion.div
-          key={currentIndex}
-          initial={{ opacity: 0 }}
+          key={currentManga.id}
+          initial={{ opacity: 0.35 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: 0.45 }}
           className="absolute inset-0"
         >
-          {/* Background Image with Parallax Effect */}
-          <motion.div
-            className="absolute inset-0 scale-110"
-            animate={{ scale: 1.1 }}
-            transition={{ duration: 10, ease: "linear" }}
-          >
-            <img
-              src={currentManga.imageUrl || "/placeholder.svg"}
-              alt={currentManga.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = "/placeholder.svg";
-              }}
-            />
-          </motion.div>
-
-          {/* Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-
-          {/* Animated gradient accent */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-red-600/20 to-blue-600/20 opacity-30 animate-pulse"></div>
-
-          {/* Content Container */}
-          <div className="absolute inset-0 flex items-center px-4 md:px-16 lg:px-24 z-10">
-            <motion.div
-              initial={{ x: -50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="max-w-2xl space-y-4 md:space-y-6"
-            >
-              {/* Status Badge */}
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="flex gap-2 flex-wrap"
-              >
-                {currentManga.status === "Ongoing" && (
-                  <div className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-500 px-4 py-2 rounded-full shadow-lg">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="text-sm font-bold">ONGOING</span>
-                  </div>
-                )}
-                {currentManga.status === "Completed" && (
-                  <div className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-500 px-4 py-2 rounded-full shadow-lg">
-                    <span className="text-sm font-bold">COMPLETED</span>
-                  </div>
-                )}
-                {currentIndex === 0 && (
-                  <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 rounded-full shadow-lg">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="text-sm font-bold">LATEST UPDATE</span>
-                  </div>
-                )}
-                {currentManga.rating && (
-                  <div className="flex items-center gap-1 bg-yellow-500/20 backdrop-blur-sm border border-yellow-500/30 px-3 py-2 rounded-full">
-                    <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
-                    <span className="text-sm font-bold text-yellow-500">
-                      {currentManga.rating}
-                    </span>
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Title */}
-              <motion.h1
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="text-2xl md:text-4xl lg:text-5xl font-bold text-white leading-tight drop-shadow-2xl"
-              >
-                {currentManga.title}
-              </motion.h1>
-
-              {/* Type & Color Badge */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.35 }}
-                className="flex items-center gap-2"
-              >
-                <span className="px-4 py-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-sm font-bold text-white">
-                  {currentManga.type.toUpperCase()}
-                </span>
-                {currentManga.isColored && (
-                  <span className="px-4 py-1.5 bg-gradient-to-r from-purple-600/30 to-pink-600/30 backdrop-blur-sm border border-purple-400/30 rounded-full text-sm font-bold text-purple-200">
-                    FULL COLOR
-                  </span>
-                )}
-              </motion.div>
-
-              {/* Latest Chapter Info */}
-              {currentManga.latestChapter && (
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
-                  className="flex flex-col gap-1"
-                >
-                  <span className="text-gray-400 text-sm">Latest Chapter</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-semibold text-base">
-                      {currentManga.latestChapter.title}
-                    </span>
-                    <span className="text-gray-400 text-sm">
-                      • {currentManga.latestChapter.releasedAt}
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Description */}
-              {/* <motion.p
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.5 }}
-                className="text-sm md:text-lg text-gray-200 leading-relaxed line-clamp-2 md:line-clamp-3 drop-shadow-lg max-w-xl"
-              >
-                {currentManga.description}
-              </motion.p> */}
-
-              {/* Action Buttons */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-                className="flex flex-wrap gap-3 md:gap-4 pt-2"
-              >
-                <Button
-                  onClick={handleReadNow}
-                  className="bg-white hover:bg-gray-100 text-black font-bold px-6 md:px-8 py-4 md:py-6 rounded-lg text-sm md:text-lg shadow-lg md:shadow-xl hover:shadow-xl md:hover:shadow-2xl hover:shadow-white/10 md:hover:scale-105 transition-all duration-300 flex items-center gap-2 touch-manipulation"
-                >
-                  <Play className="w-4 h-4 md:w-5 md:h-5 fill-current" />
-                  Read Now
-                </Button>
-                <Button
-                  onClick={handleMoreInfo}
-                  variant="outline"
-                  className="bg-white/10 backdrop-blur-md border-2 border-white/30 hover:bg-white/20 text-white font-bold px-6 md:px-8 py-4 md:py-6 rounded-lg text-sm md:text-lg shadow-md md:shadow-lg hover:shadow-lg md:hover:shadow-xl md:hover:scale-105 transition-all duration-300 flex items-center gap-2 touch-manipulation"
-                >
-                  <Info className="w-4 h-4 md:w-5 md:h-5" />
-                  More Info
-                </Button>
-              </motion.div>
-            </motion.div>
-          </div>
-
-          {/* Navigation Dots */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
-            {mangas.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  index === currentIndex
-                    ? "bg-white w-12 shadow-lg shadow-white/50"
-                    : "bg-white/30 w-8 hover:bg-white/50"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-
-          {/* Fade to Black Bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black to-transparent"></div>
+          <img
+            src={currentManga.imageUrl || "/LY-logo.png"}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-[center_28%] opacity-50 md:object-[center_22%] md:opacity-55"
+            onError={(event) => {
+              event.currentTarget.src = "/LY-logo.png";
+              event.currentTarget.className += " object-contain p-16 opacity-10";
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#08090b] via-[#08090b]/80 to-[#08090b]/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#08090b] via-[#08090b]/10 to-black/25" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_72%_42%,transparent_0%,rgba(8,9,11,0.12)_38%,#08090b_100%)]" />
         </motion.div>
       </AnimatePresence>
-    </div>
+
+      <div className="pointer-events-none absolute right-[9%] top-1/2 z-0 hidden w-[clamp(12rem,22vw,19rem)] -translate-y-[47%] xl:block">
+        <img
+          src={currentManga.imageUrl || "/placeholder.svg"}
+          alt=""
+          className="aspect-[2/3] w-full rounded-xl object-cover shadow-2xl shadow-black/70 ring-1 ring-white/15"
+        />
+      </div>
+
+      <div className="content-shell relative z-10 flex min-h-[39rem] items-end pb-24 pt-16 md:min-h-[42rem] md:items-center md:pb-10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${currentManga.id}-copy`}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-2xl xl:max-w-[58%]"
+          >
+            <p className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65">
+              <span className="h-5 w-1 rounded-full bg-[#e50914]" />
+              Featured on Ponflix
+            </p>
+            <h1 className="max-w-2xl text-4xl font-bold leading-[1.04] tracking-[-0.04em] text-white drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl">
+              {currentManga.title}
+            </h1>
+            <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-white/70">
+              <span className="font-semibold text-emerald-300">New chapters</span>
+              <span className="text-white/25">•</span>
+              <span>{currentManga.type}</span>
+              <span className="text-white/25">•</span>
+              <span>{currentManga.isColored ? "Full color" : "Black & white"}</span>
+            </div>
+            {currentManga.latestChapter && (
+              <p className="mt-4 max-w-xl text-sm leading-6 text-white/65 sm:text-base">
+                Latest update: <span className="text-white">{currentManga.latestChapter.title}</span>
+                {currentManga.latestChapter.releasedAt && (
+                  <span className="text-white/35"> · {currentManga.latestChapter.releasedAt}</span>
+                )}
+              </p>
+            )}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={openFirstChapter}
+                disabled={isOpening}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-bold text-[#111] transition hover:bg-white/85 disabled:cursor-wait disabled:opacity-75"
+              >
+                {isOpening ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4 fill-current" />
+                )}
+                Read first chapter
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/comics/${currentManga.id}`)}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white/15 px-5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/25"
+              >
+                <Info className="h-4 w-4" />
+                More info
+              </button>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {featured.length > 1 && (
+          <div className="absolute bottom-9 right-0 z-10 flex items-center gap-2">
+            <span className="mr-2 text-xs tabular-nums text-white/55">
+              {String(currentIndex + 1).padStart(2, "0")} / {String(featured.length).padStart(2, "0")}
+            </span>
+            <button
+              type="button"
+              onClick={showPrevious}
+              aria-label="Previous featured comic"
+              className="rounded-full border border-white/20 bg-black/25 p-2.5 text-white backdrop-blur transition hover:bg-white/15"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={showNext}
+              aria-label="Next featured comic"
+              className="rounded-full border border-white/20 bg-black/25 p-2.5 text-white backdrop-blur transition hover:bg-white/15"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#08090b] to-transparent" />
+    </section>
   );
 }

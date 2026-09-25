@@ -1,344 +1,284 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, NavLink, useMatch } from "react-router-dom";
-import { ChevronDown, Search, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import { Menu, Search, X } from "lucide-react";
 import { titleFromLink } from "@/lib/manga-utils";
 
 interface SearchResult {
   id: string;
   title: string;
   image: string;
-  type: "Anime" | "Manga";
-  rating: string;
+  type: string;
   link: string;
 }
 
+const API_BASE_URL = "https://ponmics-api.necode.id/Comics-API/api.php";
+
+const navItems = [
+  { label: "Home", to: "/comics" },
+  { label: "Manga", to: "/comics/category/Manga" },
+  { label: "Manhwa", to: "/comics/category/Manhwa" },
+  { label: "Manhua", to: "/comics/category/Manhua" },
+  { label: "Anime", to: "/anime" },
+];
+
 export default function Navbar() {
+  const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const animeApiBaseUrl = "https://wajik-anime-api.vercel.app";
-  const mangaApiBaseUrl = "https://ponmics-api.necode.id/Comics-API/";
-
-  const isComicsActive = !!useMatch("/comics/*");
-  const isAnimeActive = !!useMatch("/anime/*");
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 0);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => setIsScrolled(window.scrollY > 12);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Debounce search to prevent rapid API calls
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const query = searchQuery.trim();
+    if (!query) {
       setSearchResults([]);
-      setError(null);
+      setSearchError(null);
+      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
-    const debounceTimeout = setTimeout(async () => {
+    let active = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(async () => {
+      setIsLoading(true);
+      setSearchError(null);
       try {
-        // ===============================
-        // ANIME SEARCH (DISABLED - API BROKEN)
-        // ===============================
-        // const animeResponse = await fetch(
-        //   `${animeApiBaseUrl}/samehadaku/search?q=${encodeURIComponent(searchQuery)}`,
-        //   { headers: { Accept: "application/json" } }
-        // );
-
-        // let animeResults: SearchResult[] = [];
-
-        // if (animeResponse.ok) {
-        //   const animeData = await animeResponse.json();
-        //   if (animeData.ok && animeData.data?.animeList) {
-        //     animeResults = animeData.data.animeList.map((anime: any) => ({
-        //       id: anime.animeId,
-        //       title: anime.title,
-        //       image: anime.poster || "/fallback-image.jpg",
-        //       type: "Anime",
-        //       rating: anime.score || "N/A",
-        //       link: `/stream/${anime.animeId}`,
-        //     }));
-        //   }
-        // }
-
-        // ===============================
-        // MANGA SEARCH (ACTIVE)
-        // ===============================
-        const mangaResponse = await fetch(
-          `${mangaApiBaseUrl}/api.php?s=${encodeURIComponent(
-            searchQuery
-          )}&page=1`,
-          { headers: { Accept: "application/json" } }
+        const response = await fetch(
+          `${API_BASE_URL}?s=${encodeURIComponent(query)}&page=1`,
+          { headers: { Accept: "application/json" }, signal: controller.signal }
         );
+        if (!response.ok) throw new Error("Search is unavailable right now.");
 
-        let mangaResults: SearchResult[] = [];
+        const data = await response.json();
+        const results = Array.isArray(data?.data?.komik)
+          ? data.data.komik.slice(0, 6).map((manga: any) => {
+              const id = manga.link?.split("/").filter(Boolean).pop() || "";
+              return {
+                id,
+                title:
+                  manga.judul && manga.judul !== "Tidak ada judul"
+                    ? manga.judul
+                    : titleFromLink(manga.link),
+                image: manga.gambar || "",
+                type: manga.tipe || "Manga",
+                link: `/comics/${id}`,
+              };
+            })
+          : [];
 
-        if (mangaResponse.ok) {
-          const mangaData = await mangaResponse.json();
-
-          // ✅ FIX: komik is inside data.komik
-          if (mangaData.status && Array.isArray(mangaData.data?.komik)) {
-            mangaResults = mangaData.data.komik
-              .slice(0, 5)
-              .map((manga: any) => {
-                const id = manga.link.split("/").filter(Boolean).pop();
-                const rawTitle = manga.judul;
-                const fallbackTitle = titleFromLink(manga.link);
-
-                return {
-                  id,
-                  title:
-                    rawTitle && rawTitle !== "Tidak ada judul"
-                      ? rawTitle
-                      : fallbackTitle,
-                  image: manga.gambar || "/fallback-image.jpg",
-                  type: "Manga",
-                  rating: manga.rating || "N/A",
-                  link: `/comics/${id}`,
-                };
-              });
-          }
-        }
-
-        setSearchResults(mangaResults);
-
-        if (mangaResults.length === 0) {
-          setError(`No results found for "${searchQuery}"`);
+        if (active) {
+          setSearchResults(results);
+          setSearchError(results.length ? null : `No titles found for “${query}”.`);
         }
       } catch (error) {
-        setError("Search failed. Please try again.");
-        setSearchResults([]);
+        if (active && (error as Error).name !== "AbortError") {
+          setSearchResults([]);
+          setSearchError("Search is unavailable. Please try again.");
+        }
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
-    }, 500);
+    }, 350);
 
-    return () => clearTimeout(debounceTimeout);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [searchQuery]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsSearchOpen(false);
-        setSearchQuery("");
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    setIsMobileMenuOpen(false);
+    setIsMobileSearchOpen(false);
+    setSearchQuery("");
+  }, [location.pathname]);
 
-  const toggleSearch = () => {
-    setIsSearchOpen((prev) => !prev);
-    if (!isSearchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    } else {
-      setSearchQuery("");
-      setSearchResults([]);
-      setError(null);
-    }
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    searchInputRef.current?.blur();
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  const closeSearch = () => {
+    setSearchQuery("");
+    setIsMobileSearchOpen(false);
   };
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // console.log("Searching for:", searchQuery);
-  };
-
-  return (
-    <nav
-      className={`fixed top-0 w-full z-50 transition-colors duration-300 ${
-        isScrolled
-          ? "bg-black"
-          : "bg-gradient-to-b from-black/80 to-transparent"
-      }`}
-    >
-      <div className="px-4 md:px-16 py-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link to="/" className="text-red-600 font-bold text-2xl md:text-3xl">
-            <img src="/ponflix-logo.png" alt="" height={80} width={80} />
-          </Link>
-          <div className="hidden md:flex ml-8 gap-6">
-            <NavLink
-              to="/comics"
-              className={() =>
-                isComicsActive
-                  ? "text-white font-semibold"
-                  : "text-gray-400 hover:text-gray-300"
-              }
-            >
-              Comics
-            </NavLink>
-
-            <NavLink
-              to="/anime"
-              className={() =>
-                isAnimeActive
-                  ? "text-white font-semibold"
-                  : "text-gray-400 hover:text-gray-300"
-              }
-            >
-              Anime
-            </NavLink>
-
-            {/* <Link to="/genres" className="text-white hover:text-gray-300">
-              Genres
-            </Link> */}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div
-            ref={searchContainerRef}
-            className="relative flex items-center md:mr-0 mr-10"
+  const searchPanel = (mobile = false) => (
+    <div className={mobile ? "relative w-full" : "relative w-64 lg:w-72"}>
+      <form
+        onSubmit={handleSearchSubmit}
+        className="flex h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 transition focus-within:border-white/25 focus-within:bg-white/[0.09]"
+      >
+        <Search className="h-4 w-4 shrink-0 text-white/55" aria-hidden="true" />
+        <input
+          ref={searchInputRef}
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search titles"
+          aria-label="Search comics"
+          className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={closeSearch}
+            className="rounded-full p-1 text-white/55 transition hover:text-white"
+            aria-label="Clear search"
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white"
-              onClick={toggleSearch}
-            >
-              {isSearchOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Search className="h-5 w-5" />
-              )}
-            </Button>
-            <form
-              onSubmit={handleSearch}
-              className={`overflow-hidden transition-all duration-300 ${
-                isSearchOpen ? "w-32 sm:w-48 md:w-64" : "w-0"
-              } bg-black rounded-md flex items-center border border-gray-800`}
-            >
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="bg-transparent border-none outline-none text-white px-3 py-1 w-full"
-                placeholder="Search anime or manga..."
-                value={searchQuery}
-                onChange={handleInputChange}
-              />
-            </form>
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </form>
 
-            {isSearchOpen && searchQuery.trim() && (
-              <div className="absolute top-12 w-full bg-black/95 border border-gray-800 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
-                {isLoading ? (
-                  <div className="p-4 text-center">
-                    <p className="text-white text-sm">Loading...</p>
-                  </div>
-                ) : error ? (
-                  <div className="p-3">
-                    <p className="text-red-500 text-sm">{error}</p>
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  searchResults.map((result) => (
-                    <Link
-                      key={`${result.type}-${result.id}`}
-                      to={result.link}
-                      className="flex items-center gap-3 p-3 hover:bg-gray-800 transition-colors"
-                      onClick={() => {
-                        setIsSearchOpen(false);
-                        setSearchQuery("");
-                      }}
-                    >
-                      {result.image ? (
-                        <img
-                          src={result.image}
-                          alt={result.title}
-                          className="w-12 h-16 object-cover rounded-md flex-shrink-0"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src =
-                              "/fallback-image.jpg";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-12 h-16 bg-gray-700 rounded-md flex-shrink-0" />
-                      )}
-                      <div className="flex-1">
-                        <span className="text-white text-sm truncate">
-                          {result.title}
-                        </span>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <span>{result.type}</span>
-                          <span>•</span>
-                          <span>Rating: {result.rating}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="p-3">
-                    <p className="text-white text-sm">
-                      No results found for "{searchQuery}"
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="md:hidden absolute right-4 top-4 z-50">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
+      {(isLoading || searchError || searchResults.length > 0) && searchQuery && (
+        <div className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] w-full min-w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#111216]/[0.98] p-2 shadow-2xl shadow-black/60 backdrop-blur-xl">
+          {isLoading ? (
+            <p className="px-3 py-4 text-sm text-white/55">Searching titles…</p>
+          ) : searchError ? (
+            <p className="px-3 py-4 text-sm text-white/55">{searchError}</p>
           ) : (
-            <ChevronDown className="h-6 w-6" />
+            <div className="space-y-1">
+              {searchResults.map((result) => (
+                <Link
+                  key={result.id}
+                  to={result.link}
+                  className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-white/[0.08]"
+                  onClick={closeSearch}
+                >
+                  <img
+                    src={result.image || "/placeholder.svg"}
+                    alt=""
+                    className="h-14 w-10 shrink-0 rounded-md bg-white/5 object-cover"
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-medium text-white">
+                      {result.title}
+                    </span>
+                    <span className="mt-1 block text-xs text-white/45">
+                      {result.type}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </div>
           )}
-        </Button>
-      </div>
-
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-black/95 py-4 px-4">
-          <div className="flex flex-col space-y-4">
-            <NavLink
-              to="/comics"
-              className={({ isActive }) =>
-                isActive
-                  ? "text-white-50 font-semibold"
-                  : "text-gray-400 hover:text-gray-300"
-              }
-            >
-              Comics
-            </NavLink>
-            <NavLink
-              to="/anime"
-              className={({ isActive }) =>
-                isActive
-                  ? "text-white-50 font-semibold"
-                  : "text-gray-400 hover:text-gray-300"
-              }
-            >
-              Anime
-            </NavLink>
-            {/* <Link to="/genres" className="text-white hover:text-gray-300">
-              Genres
-            </Link> */}
-          </div>
         </div>
       )}
-    </nav>
+    </div>
+  );
+
+  return (
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+        isScrolled
+          ? "border-b border-white/[0.06] bg-[#08090b]/95 shadow-lg shadow-black/10 backdrop-blur-xl"
+          : "bg-gradient-to-b from-black/75 via-black/35 to-transparent"
+      }`}
+    >
+      <div className="content-shell flex h-[4.25rem] items-center gap-6">
+        <Link to="/comics" aria-label="Ponflix home" className="shrink-0">
+          <img
+            src="/ponflix-logo.png"
+            alt="Ponflix"
+            className="h-6 w-auto sm:h-7"
+          />
+        </Link>
+
+        <nav aria-label="Main navigation" className="hidden items-center gap-5 lg:flex">
+          {navItems.map((item) => {
+            const isActive =
+              item.to === "/comics"
+                ? location.pathname === "/comics"
+                : item.to === "/anime"
+                ? location.pathname.startsWith("/anime")
+                : location.pathname.startsWith(item.to);
+            return (
+              <NavLink
+                key={item.label}
+                to={item.to}
+                className={`text-[13px] transition-colors hover:text-white ${
+                  isActive ? "font-semibold text-white" : "text-white/60"
+                }`}
+              >
+                {item.label}
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        <div className="ml-auto hidden md:block">{searchPanel()}</div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setIsMobileSearchOpen((open) => !open);
+            setIsMobileMenuOpen(false);
+          }}
+          className="ml-auto rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white md:hidden"
+          aria-label={isMobileSearchOpen ? "Close search" : "Open search"}
+          aria-expanded={isMobileSearchOpen}
+        >
+          {isMobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setIsMobileMenuOpen((open) => !open);
+            setIsMobileSearchOpen(false);
+          }}
+          className="rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white lg:hidden"
+          aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={isMobileMenuOpen}
+        >
+          {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {isMobileSearchOpen && (
+        <div className="content-shell border-t border-white/[0.07] pb-4 pt-3 md:hidden">
+          {searchPanel(true)}
+        </div>
+      )}
+
+      {isMobileMenuOpen && (
+        <nav
+          aria-label="Mobile navigation"
+          className="border-t border-white/[0.07] bg-[#0b0c0f]/[0.98] px-4 py-3 backdrop-blur-xl lg:hidden"
+        >
+          <div className="mx-auto grid max-w-screen-xl grid-cols-2 gap-1">
+            {navItems.map((item) => {
+              const isActive =
+                item.to === "/comics"
+                  ? location.pathname === "/comics"
+                  : location.pathname.startsWith(item.to);
+              return (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  className={`rounded-lg px-3 py-3 text-sm transition ${
+                    isActive
+                      ? "bg-white/10 font-medium text-white"
+                      : "text-white/65 hover:bg-white/[0.06] hover:text-white"
+                  }`}
+                >
+                  {item.label}
+                </NavLink>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+    </header>
   );
 }

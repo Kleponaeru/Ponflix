@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Menu, Search, X } from "lucide-react";
 import { titleFromLink } from "@/features/comics/lib/manga-utils";
+import { searchAnime } from "@/features/anime/api/animeService";
 
 interface SearchResult {
   id: string;
@@ -23,6 +24,8 @@ const navItems = [
 
 export default function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const isAnimeSearch = location.pathname.startsWith("/anime");
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -54,28 +57,39 @@ export default function Navbar() {
       setIsLoading(true);
       setSearchError(null);
       try {
-        const response = await fetch(
-          `${API_BASE_URL}?s=${encodeURIComponent(query)}&page=1`,
-          { headers: { Accept: "application/json" }, signal: controller.signal }
-        );
-        if (!response.ok) throw new Error("Search is unavailable right now.");
+        let results: SearchResult[];
+        if (isAnimeSearch) {
+          results = (await searchAnime(query, controller.signal)).slice(0, 6).map((anime) => ({
+            id: anime.slug,
+            title: anime.title,
+            image: anime.thumbnail || "",
+            type: anime.type || "Anime",
+            link: `/anime/${anime.slug}`,
+          }));
+        } else {
+          const response = await fetch(
+            `${API_BASE_URL}?s=${encodeURIComponent(query)}&page=1`,
+            { headers: { Accept: "application/json" }, signal: controller.signal }
+          );
+          if (!response.ok) throw new Error("Search is unavailable right now.");
 
-        const data = await response.json();
-        const results = Array.isArray(data?.data?.komik)
-          ? data.data.komik.slice(0, 6).map((manga: any) => {
-              const id = manga.link?.split("/").filter(Boolean).pop() || "";
-              return {
-                id,
-                title:
-                  manga.judul && manga.judul !== "Tidak ada judul"
-                    ? manga.judul
-                    : titleFromLink(manga.link),
-                image: manga.gambar || "",
-                type: manga.tipe || "Manga",
-                link: `/comics/${id}`,
-              };
-            })
-          : [];
+          const data = await response.json();
+          results = Array.isArray(data?.data?.komik)
+            ? data.data.komik.slice(0, 6).map((manga: any) => {
+                const id = manga.link?.split("/").filter(Boolean).pop() || "";
+                return {
+                  id,
+                  title:
+                    manga.judul && manga.judul !== "Tidak ada judul"
+                      ? manga.judul
+                      : titleFromLink(manga.link),
+                  image: manga.gambar || "",
+                  type: manga.tipe || "Manga",
+                  link: `/comics/${id}`,
+                };
+              })
+            : [];
+        }
 
         if (active) {
           setSearchResults(results);
@@ -96,7 +110,7 @@ export default function Navbar() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [searchQuery]);
+  }, [isAnimeSearch, searchQuery]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -104,8 +118,20 @@ export default function Navbar() {
     setSearchQuery("");
   }, [location.pathname]);
 
+  useEffect(() => {
+    document.documentElement.dataset.mobileSearchOpen = String(isMobileSearchOpen);
+    return () => {
+      delete document.documentElement.dataset.mobileSearchOpen;
+    };
+  }, [isMobileSearchOpen]);
+
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isAnimeSearch && searchQuery.trim()) {
+      navigate(`/anime/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      closeSearch();
+      return;
+    }
     searchInputRef.current?.blur();
   };
 
@@ -125,8 +151,8 @@ export default function Navbar() {
           ref={searchInputRef}
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Search titles"
-          aria-label="Search comics"
+          placeholder={isAnimeSearch ? "Search anime" : "Search comics"}
+          aria-label={isAnimeSearch ? "Search anime" : "Search comics"}
           className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
         />
         {searchQuery && (

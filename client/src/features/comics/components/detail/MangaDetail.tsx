@@ -23,10 +23,12 @@ export default function MangaDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [chapterSearch, setChapterSearch] = useState("");
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
+    setShowFullDescription(false);
 
     const fetchManga = async () => {
       setLoading(true);
@@ -169,9 +171,25 @@ export default function MangaDetail() {
               {manga.votes && <span>{manga.votes}</span>}
             </div>
 
-            <p className="mt-5 max-w-4xl text-sm leading-7 text-white/70 sm:text-base">
-              {manga.description || "No description available."}
-            </p>
+            <div className="mt-5 max-w-4xl">
+              <p
+                id="manga-description"
+                className={`text-sm leading-7 text-white/70 sm:text-base ${showFullDescription ? "" : "line-clamp-4"}`}
+              >
+                {manga.description || "No description available."}
+              </p>
+              {manga.description.length > 180 && (
+                <button
+                  type="button"
+                  aria-expanded={showFullDescription}
+                  aria-controls="manga-description"
+                  onClick={() => setShowFullDescription((expanded) => !expanded)}
+                  className="mt-1 text-sm font-semibold text-white/60 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e50914] focus-visible:ring-offset-2 focus-visible:ring-offset-[#08090b]"
+                >
+                  {showFullDescription ? "See less" : "See more"}
+                </button>
+              )}
+            </div>
 
             {manga.alternativeTitles.length > 0 && (
               <p className="mt-3 text-xs text-white/40">

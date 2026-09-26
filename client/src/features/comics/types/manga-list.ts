@@ -5,7 +5,7 @@ export interface MangaListItem {
 
   type: string; // Manga / Manhwa / Manhua
 
-  status: "Colored" | "Black & White";
+  status: string;
   isColored: boolean;
 
   latestChapter?: {

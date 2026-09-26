@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/ponflix-anime-api/:path*",
+      "destination": "https://ponflix-api.vercel.app/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

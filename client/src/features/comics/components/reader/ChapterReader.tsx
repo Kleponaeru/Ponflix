@@ -9,6 +9,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { fetchMangaChapters } from "@/features/comics/api/mangaService";
 import { extractSlug } from "@/features/comics/utils/extractSlug";
 
 interface ChapterData {
@@ -46,10 +47,17 @@ export default function ChapterReader() {
 
     const loadChapter = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}?chapter=${encodeURIComponent(chapterId)}`,
-          { signal: controller.signal }
-        );
+        const [response, completeChapterList] = await Promise.all([
+          fetch(`${API_URL}?chapter=${encodeURIComponent(chapterId)}`, {
+            signal: controller.signal,
+          }),
+          fetchMangaChapters(id, controller.signal).catch((chapterListError) => {
+            if ((chapterListError as Error).name === "AbortError") {
+              throw chapterListError;
+            }
+            return [];
+          }),
+        ]);
         if (!response.ok) throw new Error("Chapter could not be loaded.");
         const json = await response.json();
         if (!json?.status || !json?.data) throw new Error("Invalid chapter response.");
@@ -57,6 +65,10 @@ export default function ChapterReader() {
         const data = json.data;
         const nextChapter = data.navigasi?.selanjutnya || undefined;
         const prevChapter = data.navigasi?.sebelumnya || undefined;
+        const fallbackChapters = (data.info_komik?.chapter || []).map((item: any) => ({
+          slug: extractSlug(item.link_chapter),
+          title: item.judul_chapter,
+        }));
         setChapter({
           title: data.judul || "Unknown chapter",
           images: Array.isArray(data.gambar)
@@ -64,10 +76,7 @@ export default function ChapterReader() {
             : [],
           nextChapter,
           prevChapter,
-          chapters: (data.info_komik?.chapter || []).map((item: any) => ({
-            slug: item.link_chapter,
-            title: item.judul_chapter,
-          })),
+          chapters: completeChapterList.length ? completeChapterList : fallbackChapters,
           mangaTitle: data.info_komik?.judul || "Unknown comic",
         });
       } catch (loadError) {
@@ -101,6 +110,31 @@ export default function ChapterReader() {
       if (controlsTimeout.current) window.clearTimeout(controlsTimeout.current);
     };
   }, [showControlsBriefly, chapterId]);
+
+  useEffect(() => {
+    if (!showChapterList) return;
+
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const previousRootOverflow = root.style.overflow;
+    const previousRootOverscroll = root.style.overscrollBehavior;
+    const previousBodyOverflow = body.style.overflow;
+    const previousBodyOverscroll = body.style.overscrollBehavior;
+
+    root.style.overflow = "hidden";
+    root.style.overscrollBehavior = "none";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+
+    return () => {
+      root.style.overflow = previousRootOverflow;
+      root.style.overscrollBehavior = previousRootOverscroll;
+      body.style.overflow = previousBodyOverflow;
+      body.style.overscrollBehavior = previousBodyOverscroll;
+      window.scrollTo(0, scrollY);
+    };
+  }, [showChapterList]);
 
   useEffect(() => {
     const updateProgress = () => {
@@ -324,11 +358,11 @@ export default function ChapterReader() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="reader-chapter-list-title"
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] flex overscroll-none items-center justify-center bg-black/80 p-4"
           onClick={() => setShowChapterList(false)}
         >
           <section
-            className="max-h-[80vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#111216] shadow-2xl"
+            className="max-h-[min(80dvh,44rem)] w-full max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-[#111216] shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -349,7 +383,12 @@ export default function ChapterReader() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="max-h-[calc(80vh-5rem)] overflow-auto p-2">
+            <div
+              aria-label="Chapter list"
+              className="touch-pan-y overflow-y-auto overscroll-contain p-2"
+              style={{ maxHeight: "min(calc(80dvh - 5rem), 39rem)" }}
+              tabIndex={0}
+            >
               {chapter.chapters.length ? (
                 chapter.chapters.map((item) => {
                   const slug = extractSlug(item.slug);

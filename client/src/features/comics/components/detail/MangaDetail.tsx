@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   BookOpen,
@@ -100,6 +100,14 @@ export default function MangaDetail() {
   }
 
   const status = manga.status === "Berjalan" ? "Ongoing" : manga.status || "Unknown";
+  const normalizedType = manga.type.trim().toLowerCase();
+  const browseUrl = normalizedType.includes("manhwa")
+    ? "/comics/category/Manhwa"
+    : normalizedType.includes("manhua")
+      ? "/comics/category/Manhua"
+      : normalizedType.includes("manga")
+        ? "/comics/category/Manga"
+        : "/comics";
   const openChapter = (chapterSlug?: string) => {
     if (id && chapterSlug) navigate(`/comics/${id}/chapter/${extractSlug(chapterSlug)}`);
   };
@@ -129,13 +137,12 @@ export default function MangaDetail() {
           </div>
 
           <div className="min-w-0 text-center md:text-left">
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
+            <Link
+              to={browseUrl}
               className="mb-6 inline-flex items-center gap-2 text-xs font-medium text-white/55 transition hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" /> Back to browsing
-            </button>
+            </Link>
 
             <div className="mb-4 flex flex-wrap items-center justify-center gap-2 md:justify-start">
               <span className="rounded-md bg-[#e50914] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white">

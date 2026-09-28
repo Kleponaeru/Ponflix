@@ -14,6 +14,7 @@ import {
   fetchAnimeEpisodes,
   fetchEpisodePlayback,
 } from "@/features/anime/api/animeService";
+import RelatedAnimeRow from "@/features/anime/components/RelatedAnimeRow";
 import type { AnimeEpisode, AnimePlayback } from "@/features/anime/types/anime";
 
 const EPISODES_PER_PAGE = 24;
@@ -199,6 +200,8 @@ export default function AnimeWatch() {
         <p className="mt-3 text-xs leading-5 text-white/40">
           If playback doesn&apos;t start, try another available server.
         </p>
+
+        <RelatedAnimeRow currentSlug={slug} />
 
         <section
           className="mt-10 border-t border-white/10 pt-7"

@@ -3,11 +3,6 @@ import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-r
 import ComicsLayout from "@/app/layouts/ComicsLayout";
 import PageLoader from "@/shared/components/ui/PageLoader";
 
-const DetailGenre = lazy(() => import("@/features/anime/pages/DetailGenre"));
-const OngoingDetail = lazy(() => import("@/features/anime/pages/OnGoingDetail"));
-const CompletedDetail = lazy(() => import("@/features/anime/pages/CompletedDetail"));
-const Stream = lazy(() => import("@/features/anime/pages/Stream"));
-const Genres = lazy(() => import("@/features/anime/pages/Genres"));
 const MangaRows = lazy(() => import("@/features/comics/components/home/MangaRows"));
 const MangaDetail = lazy(() => import("@/features/comics/components/detail/MangaDetail"));
 const ChapterReader = lazy(() => import("@/features/comics/components/reader/ChapterReader"));
@@ -46,11 +41,6 @@ export default function App() {
           <Route path="/comics/:id" element={<MangaDetail />} />
         </Route>
         <Route path="/comics/:id/chapter/:chapterId" element={<ChapterReader />} />
-        <Route path="/genres/:genreId" element={<DetailGenre />} />
-        <Route path="/ongoing" element={<OngoingDetail />} />
-        <Route path="/completed" element={<CompletedDetail />} />
-        <Route path="/stream/:animeId" element={<Stream />} />
-        <Route path="/genres" element={<Genres />} />
       </Routes>
     </Suspense>
   );

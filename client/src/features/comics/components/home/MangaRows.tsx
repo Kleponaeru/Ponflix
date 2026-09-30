@@ -2,6 +2,7 @@ import { AlertCircle, RotateCw } from "lucide-react";
 import { useLatestMangas } from "@/features/comics/hooks/useLatestMangas";
 import MangaHeroBanner from "./BannerManga";
 import MangaRow from "@/features/comics/components/rows/MangaRow";
+import LatestAnimeShelf from "@/features/anime/components/LatestAnimeShelf";
 
 export default function MangaRows() {
   const { data, loading, error, reload } = useLatestMangas();
@@ -40,6 +41,8 @@ export default function MangaRows() {
         <MangaRow title="Latest manhwa" mangas={data.manhwa} isLoading={loading} />
         <MangaRow title="Latest manhua" mangas={data.manhua} isLoading={loading} />
       </div>
+
+      <LatestAnimeShelf />
     </main>
   );
 }

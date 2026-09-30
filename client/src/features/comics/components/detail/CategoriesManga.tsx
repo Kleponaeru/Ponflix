@@ -138,7 +138,7 @@ export default function CategoriesManga() {
 
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm font-medium">
-            <Link to="/comics" className="text-white/50 transition hover:text-white">
+            <Link to="/home" className="text-white/50 transition hover:text-white">
               Comics
             </Link>
             <ChevronRight className="h-3.5 w-3.5 text-white/30" />

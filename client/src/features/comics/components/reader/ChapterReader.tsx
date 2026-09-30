@@ -249,7 +249,7 @@ export default function ChapterReader() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/comics")}
+                onClick={() => navigate("/home")}
                 aria-label="Browse comics"
                 className="hidden rounded-full p-2 transition hover:bg-white/10 sm:block"
               >

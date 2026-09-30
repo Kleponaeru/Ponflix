@@ -15,7 +15,7 @@ interface SearchResult {
 const API_BASE_URL = "https://ponmics-api.necode.id/Comics-API/api.php";
 
 const navItems = [
-  { label: "Home", to: "/comics" },
+  { label: "Home", to: "/home" },
   { label: "Manga", to: "/comics/category/Manga" },
   { label: "Manhwa", to: "/comics/category/Manhwa" },
   { label: "Manhua", to: "/comics/category/Manhua" },
@@ -213,7 +213,7 @@ export default function Navbar() {
       }`}
     >
       <div className="content-shell flex h-[4.25rem] items-center gap-6">
-        <Link to="/comics" aria-label="Ponflix home" className="shrink-0">
+        <Link to="/home" aria-label="Ponflix home" className="shrink-0">
           <img
             src="/ponflix-logo.png"
             alt="Ponflix"
@@ -224,8 +224,8 @@ export default function Navbar() {
         <nav aria-label="Main navigation" className="hidden items-center gap-5 lg:flex">
           {navItems.map((item) => {
             const isActive =
-              item.to === "/comics"
-                ? location.pathname === "/comics"
+              item.to === "/home"
+                ? location.pathname === "/home"
                 : item.to === "/anime"
                 ? location.pathname.startsWith("/anime")
                 : location.pathname.startsWith(item.to);
@@ -285,8 +285,8 @@ export default function Navbar() {
           <div className="mx-auto grid max-w-screen-xl grid-cols-2 gap-1">
             {navItems.map((item) => {
               const isActive =
-                item.to === "/comics"
-                  ? location.pathname === "/comics"
+                  item.to === "/home"
+                    ? location.pathname === "/home"
                   : location.pathname.startsWith(item.to);
               return (
                 <NavLink

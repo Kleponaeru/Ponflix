@@ -89,7 +89,7 @@ export default function MangaDetail() {
         </p>
         <button
           type="button"
-          onClick={() => navigate("/comics")}
+          onClick={() => navigate("/home")}
           className="mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-white/85"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -107,7 +107,7 @@ export default function MangaDetail() {
       ? "/comics/category/Manhua"
       : normalizedType.includes("manga")
         ? "/comics/category/Manga"
-        : "/comics";
+        : "/home";
   const openChapter = (chapterSlug?: string) => {
     if (id && chapterSlug) navigate(`/comics/${id}/chapter/${extractSlug(chapterSlug)}`);
   };

@@ -21,7 +21,7 @@ export default function UnderConstruction() {
           We’re getting the anime collection ready. In the meantime, there are plenty of comics waiting for you.
         </p>
         <Link
-          to="/comics"
+          to="/home"
           className="mt-7 inline-flex min-h-12 items-center gap-2 rounded-lg bg-white px-5 text-sm font-bold text-black transition hover:bg-white/85"
         >
           Explore comics <ArrowRight className="h-4 w-4" />

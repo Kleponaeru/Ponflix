@@ -30,7 +30,7 @@ export default function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route element={<SiteLayout />}>
-          <Route path="/" element={<Navigate to="/comics" replace />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
           <Route element={<AnimeLayout />}>
             <Route path="/anime" element={<AnimeHome />} />
             <Route path="/anime/search" element={<AnimeSearch />} />
@@ -38,7 +38,8 @@ export default function App() {
             <Route path="/anime/:slug" element={<AnimeDetail />} />
           </Route>
           <Route element={<ComicsLayout />}>
-            <Route path="/comics" element={<MangaRows />} />
+            <Route path="/home" element={<MangaRows />} />
+            <Route path="/comics" element={<Navigate to="/home" replace />} />
             <Route path="/comics/category/:type" element={<CategoriesManga />} />
             <Route path="/comics/:id" element={<MangaDetail />} />
           </Route>

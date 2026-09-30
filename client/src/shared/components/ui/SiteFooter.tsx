@@ -8,7 +8,7 @@ export default function SiteFooter() {
         <span>Stories worth staying in for.</span>
       </div>
       <nav aria-label="Footer navigation" className="flex items-center gap-4">
-        <Link to="/comics" className="transition-colors hover:text-white/80">
+        <Link to="/home" className="transition-colors hover:text-white/80">
           Browse comics
         </Link>
         <Link to="/anime" className="transition-colors hover:text-white/80">

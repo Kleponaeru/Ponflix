@@ -6,7 +6,7 @@ import type { AnimeTitle } from "@/features/anime/types/anime";
 interface Props {
   anime: AnimeTitle;
   index?: number;
-  layout?: "rail" | "grid";
+  layout?: "rail" | "grid" | "ranked";
 }
 
 export default function AnimeCard({ anime, index = 0, layout = "rail" }: Props) {
@@ -16,7 +16,7 @@ export default function AnimeCard({ anime, index = 0, layout = "rail" }: Props) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24, delay: Math.min(index, 8) * 0.02 }}
       whileHover={{ y: -4 }}
-      className={`group min-w-0 ${layout === "grid" ? "w-full" : "w-[clamp(9.25rem,17vw,13.25rem)] shrink-0"}`}
+      className={`group min-w-0 ${layout === "grid" ? "w-full" : layout === "ranked" ? "w-full" : "w-[clamp(9.25rem,17vw,13.25rem)] shrink-0"}`}
     >
       <Link
         to={`/anime/${anime.slug}`}
@@ -58,7 +58,9 @@ export default function AnimeCard({ anime, index = 0, layout = "rail" }: Props) 
         </div>
         <p className="flex min-h-6 items-center justify-between gap-2 px-0.5 text-xs text-white/50">
           <span className="truncate">
-            {anime.currentEpisode ? `Episode ${anime.currentEpisode}` : anime.timeAgo || "Explore series"}
+            {anime.currentEpisode
+              ? `Episode ${anime.currentEpisode}`
+              : anime.timeAgo || (layout === "ranked" ? "" : "Explore series")}
           </span>
           {anime.totalEpisodes && <span className="shrink-0">{anime.totalEpisodes} eps</span>}
         </p>

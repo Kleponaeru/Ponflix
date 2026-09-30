@@ -18,11 +18,11 @@ export default function TrendingAnimeSection({ anime, loading }: Props) {
             <Flame className="h-3.5 w-3.5" /> Popular right now
           </p>
           <h2 id="trending-anime-title" className="text-xl font-semibold tracking-tight sm:text-2xl">
-            Trending anime
+            Top 10 anime today
           </h2>
         </div>
         {!loading && (
-          <span className="pb-0.5 text-xs text-white/45">Top {anime.length} by rank</span>
+          <span className="pb-0.5 text-xs text-white/45">Ranked by popularity</span>
         )}
       </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -34,6 +34,7 @@ export default function AnimeWatch() {
     slug: string;
     episodeSlug: string;
   }>();
+  const navigate = useNavigate();
   const [playback, setPlayback] = useState<AnimePlayback | null>(null);
   const [selectedServer, setSelectedServer] = useState("");
   const [loading, setLoading] = useState(true);
@@ -105,6 +106,8 @@ export default function AnimeWatch() {
     (episodePage - 1) * EPISODES_PER_PAGE,
     episodePage * EPISODES_PER_PAGE
   );
+  const currentEpisodeIndex = episodes.findIndex((episode) => episode.slug === episodeSlug);
+  const nextEpisode = currentEpisodeIndex >= 0 ? episodes[currentEpisodeIndex + 1] : undefined;
 
   useEffect(() => {
     if (episodeQuery) {
@@ -200,6 +203,26 @@ export default function AnimeWatch() {
         <p className="mt-3 text-xs leading-5 text-white/40">
           If playback doesn&apos;t start, try another available server.
         </p>
+
+        {!episodesLoading && nextEpisode && (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-gradient-to-r from-white/[0.055] to-white/[0.02] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                Up next
+              </p>
+              <p className="mt-1 truncate text-sm font-medium text-white/90">
+                {nextEpisode.title}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/anime/${slug}/episode/${nextEpisode.slug}`)}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-black transition-colors hover:bg-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e50914]"
+            >
+              Next episode <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         <RelatedAnimeRow currentSlug={slug} />
 

@@ -15,7 +15,11 @@ import {
   fetchEpisodePlayback,
 } from "@/features/anime/api/animeService";
 import RelatedAnimeRow from "@/features/anime/components/RelatedAnimeRow";
-import type { AnimeEpisode, AnimePlayback } from "@/features/anime/types/anime";
+import type {
+  AnimeEpisode,
+  AnimePlayback,
+  AnimeServer,
+} from "@/features/anime/types/anime";
 
 const EPISODES_PER_PAGE = 24;
 
@@ -94,6 +98,24 @@ export default function AnimeWatch() {
     () => safeHttpsUrl(selectedServer || playback?.iframe),
     [playback?.iframe, selectedServer]
   );
+  const groupedServers = useMemo(() => {
+    const groups: Record<"Sub" | "Dub", { server: AnimeServer; index: number }[]> = {
+      Sub: [],
+      Dub: [],
+    };
+
+    playback?.servers?.forEach((server, index) => {
+      const serverDetails = [server.name, server.value, server.quality]
+        .filter(Boolean)
+        .join(" ");
+      const language = /(^|[\s,/_-])dub($|[\s,/_-])/i.test(serverDetails)
+        ? "Dub"
+        : "Sub";
+      groups[language].push({ server, index });
+    });
+
+    return groups;
+  }, [playback?.servers]);
   const filteredEpisodes = useMemo(() => {
     const query = episodeQuery.trim().toLocaleLowerCase();
     if (!query) return episodes;
@@ -147,14 +169,20 @@ export default function AnimeWatch() {
                 onChange={(event) => setSelectedServer(event.target.value)}
                 className="h-10 max-w-[min(18rem,65vw)] rounded-lg border border-white/10 bg-[#17181c] px-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[#e50914]"
               >
-                {playback.servers.map((server, index) => (
-                  <option
-                    key={`${server.provider}-${server.value}-${index}`}
-                    value={server.url}
-                  >
-                    {server.name || server.quality || `Server ${index + 1}`}
-                  </option>
-                ))}
+                {Object.entries(groupedServers).map(([language, servers]) =>
+                  servers?.length ? (
+                    <optgroup key={language} label={language}>
+                      {servers.map(({ server, index }) => (
+                        <option
+                          key={`${server.provider}-${server.value}-${index}`}
+                          value={server.url}
+                        >
+                          {server.name || server.quality || `Server ${index + 1}`}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : null
+                )}
               </select>
             </label>
           )}
@@ -176,7 +204,6 @@ export default function AnimeWatch() {
             <iframe
               title={playback?.title || "Anime episode player"}
               src={playerUrl}
-              referrerPolicy="no-referrer"
               allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
               allowFullScreen
               className="aspect-video w-full bg-black"

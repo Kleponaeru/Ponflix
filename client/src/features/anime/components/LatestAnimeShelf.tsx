@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, RotateCw } from "lucide-react";
-import { fetchLatestAnime } from "@/features/anime/api/animeService";
+import { ChevronRight } from "lucide-react";
 import AnimeCard from "@/features/anime/components/AnimeCard";
 import type { AnimeTitle } from "@/features/anime/types/anime";
+
+interface Props {
+  anime: AnimeTitle[];
+  loading: boolean;
+}
 
 function AnimeShelfSkeleton() {
   return (
@@ -19,33 +22,15 @@ function AnimeShelfSkeleton() {
   );
 }
 
-export default function LatestAnimeShelf() {
-  const [anime, setAnime] = useState<AnimeTitle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [reloadKey, setReloadKey] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError("");
-
-    fetchLatestAnime(controller.signal)
-      .then(setAnime)
-      .catch((loadError) => {
-        if ((loadError as Error).name !== "AbortError") {
-          setError("Anime titles couldn’t load right now.");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [reloadKey]);
+export default function LatestAnimeShelf({ anime, loading }: Props) {
+  if (!loading && anime.length === 0) return null;
 
   return (
-    <section className="content-shell mt-12 sm:mt-14" aria-labelledby="home-anime-title">
+    <section
+      id="latest-anime"
+      className="content-shell mt-8 scroll-mt-24 sm:mt-10"
+      aria-labelledby="home-anime-title"
+    >
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#e50914]">
@@ -65,18 +50,7 @@ export default function LatestAnimeShelf() {
 
       {loading ? (
         <AnimeShelfSkeleton />
-      ) : error ? (
-        <div className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-white/55">{error}</p>
-          <button
-            type="button"
-            onClick={() => setReloadKey((key) => key + 1)}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-white/15 px-4 text-sm font-medium text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e50914] sm:self-auto"
-          >
-            <RotateCw className="h-4 w-4" /> Retry
-          </button>
-        </div>
-      ) : anime.length ? (
+      ) : (
         <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 sm:gap-4">
           {anime.map((item, index) => (
             <div key={item.slug} className="snap-start">
@@ -84,10 +58,6 @@ export default function LatestAnimeShelf() {
             </div>
           ))}
         </div>
-      ) : (
-        <p className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-8 text-center text-sm text-white/55">
-          No latest anime titles are available right now.
-        </p>
       )}
     </section>
   );

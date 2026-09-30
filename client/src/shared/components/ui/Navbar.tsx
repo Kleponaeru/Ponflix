@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Menu, Search, X } from "lucide-react";
 import { titleFromLink } from "@/features/comics/lib/manga-utils";
@@ -9,10 +9,64 @@ interface SearchResult {
   title: string;
   image: string;
   type: string;
+  category: string;
   link: string;
 }
 
 const API_BASE_URL = "https://ponmics-api.necode.id/Comics-API/api.php";
+
+function categoryForComic(type?: string) {
+  const normalized = type?.toLowerCase() || "";
+  if (normalized.includes("manhwa")) return "Manhwa";
+  if (normalized.includes("manhua")) return "Manhua";
+  return "Manga";
+}
+
+async function searchComicTitles(query: string, signal: AbortSignal): Promise<SearchResult[]> {
+  const response = await fetch(
+    `${API_BASE_URL}?s=${encodeURIComponent(query)}&page=1`,
+    { headers: { Accept: "application/json" }, signal }
+  );
+  if (!response.ok) throw new Error("Comic search is unavailable right now.");
+
+  const data = await response.json();
+  if (!Array.isArray(data?.data?.komik)) return [];
+
+  return data.data.komik.slice(0, 6).flatMap((comic: any) => {
+    const id = comic.link?.split("/").filter(Boolean).pop();
+    if (!id) return [];
+    const category = categoryForComic(comic.tipe);
+    return [{
+      id,
+      title:
+        comic.judul && comic.judul !== "Tidak ada judul"
+          ? comic.judul
+          : titleFromLink(comic.link),
+      image: comic.gambar || "",
+      type: comic.tipe || category,
+      category,
+      link: `/comics/${id}`,
+    }];
+  });
+}
+
+function mapAnimeSearchResults(anime: Awaited<ReturnType<typeof searchAnime>>): SearchResult[] {
+  return anime.slice(0, 6).map((item) => ({
+    id: item.slug,
+    title: item.title,
+    image: item.thumbnail || "",
+    type: item.type || "Anime",
+    category: "Anime",
+    link: `/anime/${item.slug}`,
+  }));
+}
+
+function settle<T>(promise: Promise<T>) {
+  return promise.then(
+    (data) => ({ ok: true as const, data }),
+    (error: unknown) => ({ ok: false as const, error })
+  );
+}
 
 const navItems = [
   { label: "Home", to: "/home" },
@@ -26,6 +80,7 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const isAnimeSearch = location.pathname.startsWith("/anime");
+  const isHomeSearch = location.pathname === "/home";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -58,37 +113,22 @@ export default function Navbar() {
       setSearchError(null);
       try {
         let results: SearchResult[];
-        if (isAnimeSearch) {
-          results = (await searchAnime(query, controller.signal)).slice(0, 6).map((anime) => ({
-            id: anime.slug,
-            title: anime.title,
-            image: anime.thumbnail || "",
-            type: anime.type || "Anime",
-            link: `/anime/${anime.slug}`,
-          }));
+        if (isHomeSearch) {
+          const [animeResult, comicResult] = await Promise.all([
+            settle(searchAnime(query, controller.signal)),
+            settle(searchComicTitles(query, controller.signal)),
+          ]);
+          if (!animeResult.ok && !comicResult.ok) {
+            throw animeResult.error;
+          }
+          results = [
+            ...(animeResult.ok ? mapAnimeSearchResults(animeResult.data) : []),
+            ...(comicResult.ok ? comicResult.data : []),
+          ];
+        } else if (isAnimeSearch) {
+          results = mapAnimeSearchResults(await searchAnime(query, controller.signal));
         } else {
-          const response = await fetch(
-            `${API_BASE_URL}?s=${encodeURIComponent(query)}&page=1`,
-            { headers: { Accept: "application/json" }, signal: controller.signal }
-          );
-          if (!response.ok) throw new Error("Search is unavailable right now.");
-
-          const data = await response.json();
-          results = Array.isArray(data?.data?.komik)
-            ? data.data.komik.slice(0, 6).map((manga: any) => {
-                const id = manga.link?.split("/").filter(Boolean).pop() || "";
-                return {
-                  id,
-                  title:
-                    manga.judul && manga.judul !== "Tidak ada judul"
-                      ? manga.judul
-                      : titleFromLink(manga.link),
-                  image: manga.gambar || "",
-                  type: manga.tipe || "Manga",
-                  link: `/comics/${id}`,
-                };
-              })
-            : [];
+          results = await searchComicTitles(query, controller.signal);
         }
 
         if (active) {
@@ -110,7 +150,16 @@ export default function Navbar() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [isAnimeSearch, searchQuery]);
+  }, [isAnimeSearch, isHomeSearch, searchQuery]);
+
+  const groupedSearchResults = useMemo(
+    () =>
+      searchResults.reduce<Record<string, SearchResult[]>>((groups, result) => {
+        (groups[result.category] ||= []).push(result);
+        return groups;
+      }, {}),
+    [searchResults]
+  );
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -151,8 +200,12 @@ export default function Navbar() {
           ref={searchInputRef}
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder={isAnimeSearch ? "Search anime" : "Search comics"}
-          aria-label={isAnimeSearch ? "Search anime" : "Search comics"}
+          placeholder={
+            isHomeSearch ? "Search anime and comics" : isAnimeSearch ? "Search anime" : "Search comics"
+          }
+          aria-label={
+            isHomeSearch ? "Search anime and comics" : isAnimeSearch ? "Search anime" : "Search comics"
+          }
           className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
         />
         {searchQuery && (
@@ -168,34 +221,43 @@ export default function Navbar() {
       </form>
 
       {(isLoading || searchError || searchResults.length > 0) && searchQuery && (
-        <div className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] w-full min-w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#111216]/[0.98] p-2 shadow-2xl shadow-black/60 backdrop-blur-xl">
+          <div className="absolute right-0 top-[calc(100%+0.75rem)] z-[70] w-full min-w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-[#111216]/[0.98] p-2 shadow-2xl shadow-black/60 backdrop-blur-xl">
           {isLoading ? (
             <p className="px-3 py-4 text-sm text-white/55">Searching titles…</p>
           ) : searchError ? (
             <p className="px-3 py-4 text-sm text-white/55">{searchError}</p>
           ) : (
-            <div className="space-y-1">
-              {searchResults.map((result) => (
-                <Link
-                  key={result.id}
-                  to={result.link}
-                  className="flex items-center gap-3 rounded-xl p-2 transition hover:bg-white/[0.08]"
-                  onClick={closeSearch}
-                >
-                  <img
-                    src={result.image || "/placeholder.svg"}
-                    alt=""
-                    className="h-14 w-10 shrink-0 rounded-md bg-white/5 object-cover"
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-white">
-                      {result.title}
-                    </span>
-                    <span className="mt-1 block text-xs text-white/45">
-                      {result.type}
-                    </span>
-                  </span>
-                </Link>
+            <div className="max-h-[min(70vh,28rem)] space-y-3 overflow-y-auto">
+              {Object.entries(groupedSearchResults).map(([category, results]) => (
+                <section key={category} aria-label={`${category} search results`}>
+                  <h3 className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#ff6670]">
+                    {category}
+                  </h3>
+                  <div className="space-y-1">
+                    {results.map((result) => (
+                      <Link
+                        key={`${category}-${result.id}`}
+                        to={result.link}
+                        className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-white/[0.08]"
+                        onClick={closeSearch}
+                      >
+                        <img
+                          src={result.image || "/placeholder.svg"}
+                          alt=""
+                          className="h-14 w-10 shrink-0 rounded-md bg-white/5 object-cover"
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-medium text-white">
+                            {result.title}
+                          </span>
+                          <span className="mt-1 block text-xs text-white/45">
+                            {result.type}
+                          </span>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}

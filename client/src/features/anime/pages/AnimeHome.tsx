@@ -48,7 +48,7 @@ export default function AnimeHome() {
   return (
     <main className="overflow-hidden bg-[#08090b] pb-16 text-white">
       {featured ? (
-        <AnimeHero anime={featured} />
+        <AnimeHero anime={anime} />
       ) : loading ? (
         <section className="content-shell flex min-h-[34rem] items-end py-14 md:min-h-[40rem]">
           <div className="w-full max-w-2xl space-y-5">

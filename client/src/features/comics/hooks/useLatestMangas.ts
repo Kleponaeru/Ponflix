@@ -9,7 +9,7 @@ export type MangaData = {
   manhua: MangaListItem[];
 };
 
-const API_BASE_URL = "https://ponmics-api.necode.id/Comics-API";
+const API_BASE_URL = "https://ponflix-comics-api.vercel.app/api.php";
 
 export function useLatestMangas() {
   const [data, setData] = useState<MangaData>({
@@ -27,7 +27,7 @@ export function useLatestMangas() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api.php?latest=1&page=1`, {
+      const res = await fetch(`${API_BASE_URL}?latest=1&page=1`, {
         headers: { Accept: "application/json" },
       });
 

@@ -35,7 +35,7 @@ export default function MangaDetail() {
       setError(false);
       try {
         const response = await fetch(
-          `https://ponmics-api.necode.id/Comics-API/api.php?komik=${encodeURIComponent(id)}`,
+          `https://ponflix-comics-api.vercel.app/api.php?komik=${encodeURIComponent(id)}`,
           { signal: controller.signal }
         );
         if (!response.ok) throw new Error("Manga details could not be loaded.");

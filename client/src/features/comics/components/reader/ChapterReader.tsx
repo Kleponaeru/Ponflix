@@ -21,7 +21,7 @@ interface ChapterData {
   mangaTitle: string;
 }
 
-const API_URL = "https://ponmics-api.necode.id/Comics-API/api.php";
+const API_URL = "https://ponflix-comics-api.vercel.app/api.php";
 
 export default function ChapterReader() {
   const { id, chapterId } = useParams<{ id: string; chapterId: string }>();

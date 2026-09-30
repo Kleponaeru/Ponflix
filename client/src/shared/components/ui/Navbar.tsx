@@ -13,7 +13,7 @@ interface SearchResult {
   link: string;
 }
 
-const API_BASE_URL = "https://ponmics-api.necode.id/Comics-API/api.php";
+const API_BASE_URL = "https://ponflix-comics-api.vercel.app/api.php";
 
 function categoryForComic(type?: string) {
   const normalized = type?.toLowerCase() || "";

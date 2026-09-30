@@ -47,17 +47,9 @@ export default function ChapterReader() {
 
     const loadChapter = async () => {
       try {
-        const [response, completeChapterList] = await Promise.all([
-          fetch(`${API_URL}?chapter=${encodeURIComponent(chapterId)}`, {
-            signal: controller.signal,
-          }),
-          fetchMangaChapters(id, controller.signal).catch((chapterListError) => {
-            if ((chapterListError as Error).name === "AbortError") {
-              throw chapterListError;
-            }
-            return [];
-          }),
-        ]);
+        const response = await fetch(`${API_URL}?chapter=${encodeURIComponent(chapterId)}`, {
+          signal: controller.signal,
+        });
         if (!response.ok) throw new Error("Chapter could not be loaded.");
         const json = await response.json();
         if (!json?.status || !json?.data) throw new Error("Invalid chapter response.");
@@ -76,9 +68,22 @@ export default function ChapterReader() {
             : [],
           nextChapter,
           prevChapter,
-          chapters: completeChapterList.length ? completeChapterList : fallbackChapters,
+          chapters: fallbackChapters,
           mangaTitle: data.info_komik?.judul || "Unknown comic",
         });
+
+        void fetchMangaChapters(id, controller.signal)
+          .then((completeChapterList) => {
+            if (controller.signal.aborted || completeChapterList.length === 0) return;
+            setChapter((current) =>
+              current ? { ...current, chapters: completeChapterList } : current
+            );
+          })
+          .catch((chapterListError: unknown) => {
+            if ((chapterListError as Error).name !== "AbortError") {
+              // The chapter's own navigation and fallback list remain available.
+            }
+          });
       } catch (loadError) {
         if ((loadError as Error).name !== "AbortError") setError(true);
       } finally {
@@ -137,20 +142,36 @@ export default function ChapterReader() {
   }, [showChapterList]);
 
   useEffect(() => {
-    const updateProgress = () => {
-      const pages = document.querySelectorAll<HTMLElement>("[data-reader-page]");
-      const middle = window.innerHeight / 2;
-      for (let index = 0; index < pages.length; index += 1) {
-        const bounds = pages[index].getBoundingClientRect();
-        if (bounds.top <= middle && bounds.bottom >= middle) {
-          setCurrentImageIndex(index);
-          return;
+    if (!chapter?.images.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const center = window.innerHeight / 2;
+        const currentPage = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort(
+            (a, b) =>
+              Math.abs(a.boundingClientRect.top + a.boundingClientRect.height / 2 - center) -
+              Math.abs(b.boundingClientRect.top + b.boundingClientRect.height / 2 - center)
+          )[0];
+
+        if (!currentPage) return;
+        const nextIndex = Number((currentPage.target as HTMLElement).dataset.readerPage);
+        if (Number.isFinite(nextIndex)) {
+          setCurrentImageIndex((currentIndex) =>
+            currentIndex === nextIndex ? currentIndex : nextIndex
+          );
         }
-      }
-    };
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    return () => window.removeEventListener("scroll", updateProgress);
-  }, [chapter]);
+      },
+      { rootMargin: "-45% 0px -45% 0px", threshold: 0 }
+    );
+
+    document
+      .querySelectorAll<HTMLElement>("[data-reader-page]")
+      .forEach((page) => observer.observe(page));
+
+    return () => observer.disconnect();
+  }, [chapter?.images]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -270,7 +291,7 @@ export default function ChapterReader() {
 
       <section className="mx-auto max-w-4xl px-0 pb-36 pt-16 sm:px-4 sm:pt-20">
         {chapter.images.map((image, index) => (
-          <div data-reader-page key={`${chapterId}-${index}`} className="mb-1 bg-black">
+          <div data-reader-page={index} key={`${chapterId}-${index}`} className="mb-1 bg-black">
             <img
               src={image}
               alt={`Page ${index + 1}`}

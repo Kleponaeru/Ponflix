@@ -4,6 +4,11 @@ import { normalizeManga } from "@/features/comics/utils/normalizeManga";
 import { extractSlug } from "@/features/comics/utils/extractSlug";
 
 const API_BASE_URL = "https://ponflix-comics-api.vercel.app/api.php";
+const CHAPTER_CACHE_TTL = 5 * 60 * 1000;
+const chapterCache = new Map<
+  string,
+  { chapters: MangaChapter[]; expiresAt: number }
+>();
 
 export async function fetchFirstChapterSlug(
   mangaId: string
@@ -20,6 +25,12 @@ export async function fetchMangaChapters(
   mangaId: string,
   signal?: AbortSignal
 ): Promise<MangaChapter[]> {
+  if (signal?.aborted) throw new DOMException("The request was aborted.", "AbortError");
+
+  const cached = chapterCache.get(mangaId);
+  if (cached && cached.expiresAt > Date.now()) return cached.chapters;
+  if (cached) chapterCache.delete(mangaId);
+
   const response = await fetch(
     `${API_BASE_URL}?komik=${encodeURIComponent(mangaId)}`,
     { signal }
@@ -30,13 +41,22 @@ export async function fetchMangaChapters(
   const chapters = json?.data?.daftar_chapter;
   if (!Array.isArray(chapters)) return [];
 
-  return chapters
+  const mappedChapters = chapters
     .map((chapter: any) => ({
       title: chapter.judul_chapter || "Untitled chapter",
       slug: extractSlug(chapter.link_chapter),
       releasedAt: chapter.waktu_rilis || "",
     }))
     .filter((chapter: MangaChapter) => chapter.slug !== "unknown");
+
+  if (!signal?.aborted) {
+    chapterCache.set(mangaId, {
+      chapters: mappedChapters,
+      expiresAt: Date.now() + CHAPTER_CACHE_TTL,
+    });
+  }
+
+  return mappedChapters;
 }
 
 export async function fetchMangaByType(

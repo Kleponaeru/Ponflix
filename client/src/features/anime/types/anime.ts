@@ -12,6 +12,7 @@ export interface AnimeTitle {
   views?: number | string | null;
   timeAgo?: string | null;
   score?: number | null;
+  rank?: number | null;
 }
 
 export interface AnimeDetails extends AnimeTitle {

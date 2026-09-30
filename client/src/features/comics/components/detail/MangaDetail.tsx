@@ -66,7 +66,7 @@ export default function MangaDetail() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#08090b] pt-[4.25rem]">
+      <main className="bg-[#08090b] pt-[4.25rem]">
         <div className="content-shell grid min-h-[34rem] items-center gap-10 py-12 md:grid-cols-[16rem_1fr]">
           <div className="mx-auto aspect-[2/3] w-52 animate-pulse rounded-2xl bg-white/[0.06] md:w-full" />
           <div className="space-y-4">
@@ -81,7 +81,7 @@ export default function MangaDetail() {
 
   if (error || !manga) {
     return (
-      <main className="content-shell flex min-h-[70vh] flex-col items-center justify-center pt-16 text-center">
+      <main className="content-shell flex flex-col items-center justify-center pt-16 text-center">
         <BookOpen className="h-10 w-10 text-[#e50914]" />
         <h1 className="mt-5 text-2xl font-semibold text-white">We couldn’t find that title.</h1>
         <p className="mt-2 max-w-sm text-sm leading-6 text-white/55">
@@ -113,7 +113,7 @@ export default function MangaDetail() {
   };
 
   return (
-    <main className="min-h-screen bg-[#08090b] pb-16 pt-[4.25rem]">
+    <main className="bg-[#08090b] pb-16 pt-[4.25rem]">
       <section className="relative isolate overflow-hidden border-b border-white/[0.06]">
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <img

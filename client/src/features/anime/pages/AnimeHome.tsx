@@ -46,7 +46,7 @@ export default function AnimeHome() {
   const featured = anime[0];
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#08090b] pb-16 text-white">
+    <main className="overflow-hidden bg-[#08090b] pb-16 text-white">
       {featured ? (
         <AnimeHero anime={featured} />
       ) : loading ? (

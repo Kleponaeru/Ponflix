@@ -1,5 +1,4 @@
 import { AlertCircle, RotateCw } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useLatestMangas } from "@/features/comics/hooks/useLatestMangas";
 import MangaHeroBanner from "./BannerManga";
 import MangaRow from "@/features/comics/components/rows/MangaRow";
@@ -8,7 +7,7 @@ export default function MangaRows() {
   const { data, loading, error, reload } = useLatestMangas();
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#08090b] pb-16">
+    <main className="overflow-hidden bg-[#08090b] pb-16">
       <MangaHeroBanner
         featured={data.featured}
         isLoading={loading}
@@ -41,17 +40,6 @@ export default function MangaRows() {
         <MangaRow title="Latest manhwa" mangas={data.manhwa} isLoading={loading} />
         <MangaRow title="Latest manhua" mangas={data.manhua} isLoading={loading} />
       </div>
-
-      <footer className="content-shell mt-12 flex flex-col gap-4 border-t border-white/[0.07] py-7 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <img src="/ponflix-logo.png" alt="Ponflix" className="h-5 w-auto opacity-75" />
-          <span>Stories worth staying in for.</span>
-        </div>
-        <nav aria-label="Footer navigation" className="flex items-center gap-4">
-          <Link to="/comics" className="transition hover:text-white/80">Browse comics</Link>
-          <Link to="/anime" className="transition hover:text-white/80">Anime</Link>
-        </nav>
-      </footer>
     </main>
   );
 }

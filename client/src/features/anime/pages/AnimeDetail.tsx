@@ -59,7 +59,7 @@ export default function AnimeDetail() {
 
   if (loading) {
     return (
-      <main className="content-shell grid min-h-[75vh] items-center gap-8 pt-20 md:grid-cols-[15rem_minmax(0,1fr)]">
+      <main className="content-shell grid items-center gap-8 pt-20 md:grid-cols-[15rem_minmax(0,1fr)]">
         <div className="mx-auto aspect-[2/3] w-48 animate-pulse rounded-2xl bg-white/[0.06] md:w-full" />
         <div className="space-y-4"><div className="h-10 w-3/4 animate-pulse rounded bg-white/[0.06]" /><div className="h-24 max-w-2xl animate-pulse rounded bg-white/[0.04]" /></div>
       </main>
@@ -68,7 +68,7 @@ export default function AnimeDetail() {
 
   if (error || !anime) {
     return (
-      <main className="content-shell flex min-h-[75vh] items-center justify-center pt-20 text-center">
+      <main className="content-shell flex items-center justify-center pt-20 text-center">
         <div>
           <h1 className="text-2xl font-semibold">Anime details couldn’t load.</h1>
           <p className="mt-2 text-sm text-white/55">The series may be unavailable right now.</p>
@@ -85,7 +85,7 @@ export default function AnimeDetail() {
   };
 
   return (
-    <main className="min-h-screen bg-[#08090b] pb-16 pt-[4.25rem] text-white">
+    <main className="bg-[#08090b] pb-16 pt-[4.25rem] text-white">
       <section className="relative isolate overflow-hidden border-b border-white/[0.06]">
         <img src={anime.thumbnail} alt="" className="absolute inset-0 -z-20 h-full w-full scale-110 object-cover opacity-20 blur-2xl" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#08090b] via-[#08090b]/90 to-[#08090b]/55" />

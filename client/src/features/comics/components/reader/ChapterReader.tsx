@@ -167,7 +167,7 @@ export default function ChapterReader() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#08090b]">
+      <main className="flex items-center justify-center bg-[#08090b]">
         <LoaderCircle className="h-9 w-9 animate-spin text-[#e50914]" />
       </main>
     );
@@ -175,7 +175,7 @@ export default function ChapterReader() {
 
   if (error || !chapter) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#08090b] px-4 text-center text-white">
+      <main className="flex flex-col items-center justify-center bg-[#08090b] px-4 text-center text-white">
         <BookOpen className="h-8 w-8 text-[#e50914]" />
         <h1 className="mt-4 text-xl font-semibold">Chapter unavailable</h1>
         <p className="mt-2 max-w-sm text-sm leading-6 text-white/50">
@@ -194,7 +194,7 @@ export default function ChapterReader() {
 
   if (!chapter.images.length) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#08090b] px-4 text-center text-white">
+      <main className="flex flex-col items-center justify-center bg-[#08090b] px-4 text-center text-white">
         <BookOpen className="h-8 w-8 text-[#e50914]" />
         <h1 className="mt-4 text-xl font-semibold">No pages available</h1>
         <p className="mt-2 text-sm text-white/50">There are no readable pages for this chapter yet.</p>
@@ -213,7 +213,7 @@ export default function ChapterReader() {
 
   return (
     <main
-      className="min-h-screen bg-[#08090b] text-white"
+      className="bg-[#08090b] text-white"
       onMouseMove={showControlsBriefly}
       onTouchStart={showControlsBriefly}
     >

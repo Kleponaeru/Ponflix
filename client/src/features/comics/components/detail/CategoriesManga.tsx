@@ -86,7 +86,7 @@ export default function CategoriesManga() {
   };
 
   return (
-    <main className="min-h-screen bg-[#08090b] px-4 pb-16 pt-[5.75rem] text-white md:px-8">
+    <main className="bg-[#08090b] px-4 pb-16 pt-[5.75rem] text-white md:px-8">
       <div className="content-shell">
         <section className="relative isolate mb-8 overflow-hidden rounded-2xl border border-white/[0.07] bg-[#111216] px-5 py-8 sm:px-8 sm:py-10 md:px-12">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_85%_5%,rgba(229,9,20,0.22),transparent_48%),linear-gradient(115deg,#1b1013,#111216_58%,#0c0d10)]" />

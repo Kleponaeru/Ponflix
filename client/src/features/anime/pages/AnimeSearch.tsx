@@ -36,7 +36,7 @@ export default function AnimeSearch() {
   }, [query]);
 
   return (
-    <main className="min-h-screen bg-[#08090b] px-4 pb-16 pt-28 text-white md:px-8">
+    <main className="bg-[#08090b] px-4 pb-16 pt-28 text-white md:px-8">
       <div className="content-shell">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#ff6670]">Anime collection</p>
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">

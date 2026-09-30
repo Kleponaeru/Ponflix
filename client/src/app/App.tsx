@@ -1,6 +1,7 @@
 import { lazy, Suspense, useLayoutEffect, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import ComicsLayout from "@/app/layouts/ComicsLayout";
+import SiteLayout from "@/app/layouts/SiteLayout";
 import PageLoader from "@/shared/components/ui/PageLoader";
 
 const MangaRows = lazy(() => import("@/features/comics/components/home/MangaRows"));
@@ -28,19 +29,21 @@ export default function App() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        <Route path="/" element={<Navigate to="/comics" replace />} />
-        <Route element={<AnimeLayout />}>
-          <Route path="/anime" element={<AnimeHome />} />
-          <Route path="/anime/search" element={<AnimeSearch />} />
-          <Route path="/anime/:slug/episode/:episodeSlug" element={<AnimeWatch />} />
-          <Route path="/anime/:slug" element={<AnimeDetail />} />
+        <Route element={<SiteLayout />}>
+          <Route path="/" element={<Navigate to="/comics" replace />} />
+          <Route element={<AnimeLayout />}>
+            <Route path="/anime" element={<AnimeHome />} />
+            <Route path="/anime/search" element={<AnimeSearch />} />
+            <Route path="/anime/:slug/episode/:episodeSlug" element={<AnimeWatch />} />
+            <Route path="/anime/:slug" element={<AnimeDetail />} />
+          </Route>
+          <Route element={<ComicsLayout />}>
+            <Route path="/comics" element={<MangaRows />} />
+            <Route path="/comics/category/:type" element={<CategoriesManga />} />
+            <Route path="/comics/:id" element={<MangaDetail />} />
+          </Route>
+          <Route path="/comics/:id/chapter/:chapterId" element={<ChapterReader />} />
         </Route>
-        <Route element={<ComicsLayout />}>
-          <Route path="/comics" element={<MangaRows />} />
-          <Route path="/comics/category/:type" element={<CategoriesManga />} />
-          <Route path="/comics/:id" element={<MangaDetail />} />
-        </Route>
-        <Route path="/comics/:id/chapter/:chapterId" element={<ChapterReader />} />
       </Routes>
     </Suspense>
   );

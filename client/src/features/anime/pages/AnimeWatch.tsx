@@ -143,7 +143,7 @@ export default function AnimeWatch() {
   }, [episodeSlug, episodeQuery, episodes]);
 
   return (
-    <main className="min-h-screen bg-[#08090b] px-4 pb-14 pt-24 text-white md:px-8">
+    <main className="bg-[#08090b] px-4 pb-14 pt-24 text-white md:px-8">
       <div className="content-shell">
         <Link
           to={`/anime/${slug}`}

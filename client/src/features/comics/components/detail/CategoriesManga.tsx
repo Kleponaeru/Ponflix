@@ -8,6 +8,8 @@ import { normalizeTitle } from "@/features/comics/utils/title";
 import MangaCard from "@/features/comics/components/cards/MangaCard";
 
 const ITEMS_PER_PAGE = 20;
+const CATEGORY_CACHE_TTL = 5 * 60 * 1000;
+const categoryCache = new Map<string, { items: MangaListItem[]; cachedAt: number }>();
 
 function titleForType(type?: string) {
   if (!type) return "Comics";
@@ -19,7 +21,7 @@ function titleForType(type?: string) {
 function CategorySkeleton() {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 lg:gap-5" aria-hidden="true">
-      {Array.from({ length: 10 }).map((_, index) => (
+      {Array.from({ length: 6 }).map((_, index) => (
         <div key={index}>
           <div className="aspect-[2/3] animate-pulse rounded-xl bg-white/[0.06]" />
           <div className="mt-3 h-3 w-3/4 animate-pulse rounded bg-white/[0.06]" />
@@ -42,25 +44,57 @@ export default function CategoriesManga() {
   useEffect(() => {
     if (!type) return;
     const controller = new AbortController();
-    setLoading(true);
+    let active = true;
+    const cached = categoryCache.get(type);
+    let hasContent = Boolean(cached?.items.length);
+
+    if (cached) {
+      setMangas(cached.items);
+      setLoading(false);
+      setPage(1);
+    } else {
+      setMangas([]);
+      setLoading(true);
+    }
     setError(null);
 
-    fetchMangaByType(type, 10, { signal: controller.signal })
+    if (cached && Date.now() - cached.cachedAt < CATEGORY_CACHE_TTL) {
+      return () => {
+        active = false;
+        controller.abort();
+      };
+    }
+
+    fetchMangaByType(type, 10, {
+      signal: controller.signal,
+      onFirstPage: (items) => {
+        if (!active) return;
+        hasContent = items.length > 0;
+        setMangas(items);
+        setLoading(false);
+        categoryCache.set(type, { items, cachedAt: Date.now() });
+      },
+    })
       .then((results) => {
+        if (!active) return;
         setMangas(results);
+        categoryCache.set(type, { items: results, cachedAt: Date.now() });
         setPage(1);
       })
       .catch((fetchError) => {
-        if (fetchError.name !== "AbortError") {
+        if (active && fetchError.name !== "AbortError" && !hasContent) {
           setError("We couldn’t load this collection. Please try again.");
           setMangas([]);
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (active && !controller.signal.aborted) setLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [type, reloadKey]);
 
   const filteredMangas = useMemo(() => {

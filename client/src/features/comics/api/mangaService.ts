@@ -42,34 +42,49 @@ export async function fetchMangaChapters(
 export async function fetchMangaByType(
   type: string,
   maxPages = 10,
-  options?: { signal?: AbortSignal }
+  options?: {
+    signal?: AbortSignal;
+    onFirstPage?: (items: MangaListItem[]) => void;
+  }
 ) {
-  let page = 1;
-  let all: MangaListItem[] = [];
-
-  const endpoint =
+  const baseParams = new URLSearchParams(
     type === "ongoing"
-      ? `?status=ongoing&page=`
+      ? { status: "ongoing" }
       : type === "completed"
-      ? `?status=completed&page=`
-      : `?type=${type}&page=`;
+        ? { status: "completed" }
+        : { type }
+  );
 
-  while (page <= maxPages) {
-    const res = await fetch(
-      `${API_BASE_URL}${endpoint}${page}`,
-      { signal: options?.signal }
-    );
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch page ${page}`);
-    }
+  const fetchPage = async (page: number) => {
+    const params = new URLSearchParams(baseParams);
+    params.set("page", String(page));
+    const res = await fetch(`${API_BASE_URL}?${params}`, {
+      signal: options?.signal,
+    });
+    if (!res.ok) throw new Error(`Failed to fetch page ${page}`);
 
     const json = await res.json();
+    return {
+      items: Array.isArray(json?.data?.komik)
+        ? normalizeManga(json.data.komik)
+        : [],
+      totalPages: Number(json?.data?.total_halaman) || maxPages,
+    };
+  };
 
-    if (!json?.data?.komik?.length) break;
+  const firstPage = await fetchPage(1);
+  const all = [...firstPage.items];
+  options?.onFirstPage?.(firstPage.items);
 
-    all.push(...normalizeManga(json.data.komik));
-    page++;
+  const lastPage = Math.min(maxPages, firstPage.totalPages);
+  const pagesPerBatch = 3;
+  for (let start = 2; start <= lastPage; start += pagesPerBatch) {
+    const pageNumbers = Array.from(
+      { length: Math.min(pagesPerBatch, lastPage - start + 1) },
+      (_, index) => start + index
+    );
+    const batch = await Promise.all(pageNumbers.map(fetchPage));
+    batch.forEach(({ items }) => all.push(...items));
   }
 
   return all;

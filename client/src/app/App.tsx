@@ -1,6 +1,7 @@
 import { lazy, Suspense, useLayoutEffect, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import ComicsLayout from "@/app/layouts/ComicsLayout";
+import MoviesLayout from "@/app/layouts/MoviesLayout";
 import SiteLayout from "@/app/layouts/SiteLayout";
 import PageLoader from "@/shared/components/ui/PageLoader";
 
@@ -13,6 +14,8 @@ const AnimeSearch = lazy(() => import("@/features/anime/pages/AnimeSearch"));
 const AnimeDetail = lazy(() => import("@/features/anime/pages/AnimeDetail"));
 const AnimeWatch = lazy(() => import("@/features/anime/pages/AnimeWatch"));
 const AnimeLayout = lazy(() => import("@/features/anime/components/AnimeLayout"));
+const MoviesHome = lazy(() => import("@/features/movies/pages/MoviesHome"));
+const MovieDetail = lazy(() => import("@/features/movies/pages/MovieDetail"));
 
 export default function App() {
   const { pathname } = useLocation();
@@ -42,6 +45,10 @@ export default function App() {
             <Route path="/comics" element={<Navigate to="/home" replace />} />
             <Route path="/comics/category/:type" element={<CategoriesManga />} />
             <Route path="/comics/:id" element={<MangaDetail />} />
+          </Route>
+          <Route element={<MoviesLayout />}>
+            <Route path="/movies" element={<MoviesHome />} />
+            <Route path="/movies/:id" element={<MovieDetail />} />
           </Route>
           <Route path="/comics/:id/chapter/:chapterId" element={<ChapterReader />} />
         </Route>

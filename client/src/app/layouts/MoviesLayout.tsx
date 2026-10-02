@@ -1,0 +1,11 @@
+import { Outlet } from "react-router-dom";
+import Navbar from "@/shared/components/ui/Navbar";
+
+export default function MoviesLayout() {
+  return (
+    <>
+      <Navbar />
+      <Outlet />
+    </>
+  );
+}

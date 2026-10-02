@@ -8,6 +8,11 @@ const animeApiProxy = {
   changeOrigin: true,
   rewrite: (path) => path.replace(/^\/ponflix-anime-api/, ""),
 };
+const movieApiProxy = {
+  target: "https://ponflix-api.vercel.app",
+  changeOrigin: true,
+  rewrite: (path) => path.replace(/^\/ponflix-movie-api/, ""),
+};
 
 export default defineConfig({
   plugins: [react()],
@@ -19,11 +24,13 @@ export default defineConfig({
   server: {
     proxy: {
       "/ponflix-anime-api": animeApiProxy,
+      "/ponflix-movie-api": movieApiProxy,
     },
   },
   preview: {
     proxy: {
       "/ponflix-anime-api": animeApiProxy,
+      "/ponflix-movie-api": movieApiProxy,
     },
   },
 });

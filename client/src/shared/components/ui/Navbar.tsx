@@ -1,8 +1,9 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Search, X } from "lucide-react";
+import { ChevronDown, Menu, Search, X } from "lucide-react";
 import { titleFromLink } from "@/features/comics/lib/manga-utils";
 import { searchAnime } from "@/features/anime/api/animeService";
+import { movieImage, searchMovies } from "@/features/movies/api/movieService";
 
 interface SearchResult {
   id: string;
@@ -61,6 +62,18 @@ function mapAnimeSearchResults(anime: Awaited<ReturnType<typeof searchAnime>>): 
   }));
 }
 
+async function mapMovieSearchResults(query: string, signal: AbortSignal): Promise<SearchResult[]> {
+  const result = await searchMovies(query, 1, signal);
+  return result.data.slice(0, 6).map((item) => ({
+    id: String(item.id),
+    title: item.title,
+    image: item.poster_path ? movieImage(item.poster_path, "w185") : "",
+    type: item.release_date?.slice(0, 4) || "Movie",
+    category: "Movies",
+    link: `/movies/${item.id}`,
+  }));
+}
+
 function settle<T>(promise: Promise<T>) {
   return promise.then(
     (data) => ({ ok: true as const, data }),
@@ -70,19 +83,20 @@ function settle<T>(promise: Promise<T>) {
 
 const navItems = [
   { label: "Home", to: "/home" },
-  { label: "Manga", to: "/comics/category/Manga" },
-  { label: "Manhwa", to: "/comics/category/Manhwa" },
-  { label: "Manhua", to: "/comics/category/Manhua" },
   { label: "Anime", to: "/anime" },
 ];
+
+const comicCategories = ["Manhwa", "Manga", "Manhua"];
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const isAnimeSearch = location.pathname.startsWith("/anime");
+  const isMovieSearch = location.pathname.startsWith("/movies");
   const isHomeSearch = location.pathname === "/home";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isComicsMenuOpen, setIsComicsMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -114,19 +128,23 @@ export default function Navbar() {
       try {
         let results: SearchResult[];
         if (isHomeSearch) {
-          const [animeResult, comicResult] = await Promise.all([
+          const [animeResult, comicResult, movieResult] = await Promise.all([
             settle(searchAnime(query, controller.signal)),
             settle(searchComicTitles(query, controller.signal)),
+            settle(mapMovieSearchResults(query, controller.signal)),
           ]);
-          if (!animeResult.ok && !comicResult.ok) {
+          if (!animeResult.ok && !comicResult.ok && !movieResult.ok) {
             throw animeResult.error;
           }
           results = [
             ...(animeResult.ok ? mapAnimeSearchResults(animeResult.data) : []),
             ...(comicResult.ok ? comicResult.data : []),
+            ...(movieResult.ok ? movieResult.data : []),
           ];
         } else if (isAnimeSearch) {
           results = mapAnimeSearchResults(await searchAnime(query, controller.signal));
+        } else if (isMovieSearch) {
+          results = await mapMovieSearchResults(query, controller.signal);
         } else {
           results = await searchComicTitles(query, controller.signal);
         }
@@ -150,7 +168,7 @@ export default function Navbar() {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [isAnimeSearch, isHomeSearch, searchQuery]);
+  }, [isAnimeSearch, isHomeSearch, isMovieSearch, searchQuery]);
 
   const groupedSearchResults = useMemo(
     () =>
@@ -164,6 +182,7 @@ export default function Navbar() {
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsMobileSearchOpen(false);
+    setIsComicsMenuOpen(false);
     setSearchQuery("");
   }, [location.pathname]);
 
@@ -176,8 +195,9 @@ export default function Navbar() {
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isAnimeSearch && searchQuery.trim()) {
-      navigate(`/anime/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    if ((isAnimeSearch || isMovieSearch) && searchQuery.trim()) {
+      const section = isAnimeSearch ? "/anime/search" : "/movies";
+      navigate(`${section}?q=${encodeURIComponent(searchQuery.trim())}`);
       closeSearch();
       return;
     }
@@ -201,10 +221,10 @@ export default function Navbar() {
           value={searchQuery}
           onChange={(event) => setSearchQuery(event.target.value)}
           placeholder={
-            isHomeSearch ? "Search anime and comics" : isAnimeSearch ? "Search anime" : "Search comics"
+            isHomeSearch ? "Search anime, comics, and movies" : isAnimeSearch ? "Search anime" : isMovieSearch ? "Search movies" : "Search comics"
           }
           aria-label={
-            isHomeSearch ? "Search anime and comics" : isAnimeSearch ? "Search anime" : "Search comics"
+            isHomeSearch ? "Search anime, comics, and movies" : isAnimeSearch ? "Search anime" : isMovieSearch ? "Search movies" : "Search comics"
           }
           className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
         />
@@ -288,14 +308,14 @@ export default function Navbar() {
             const isActive =
               item.to === "/home"
                 ? location.pathname === "/home"
-                : item.to === "/anime"
+              : item.to === "/anime"
                 ? location.pathname.startsWith("/anime")
                 : location.pathname.startsWith(item.to);
             return (
               <NavLink
                 key={item.label}
                 to={item.to}
-                className={`text-[13px] transition-colors hover:text-white ${
+                className={`inline-flex h-10 items-center text-[13px] transition-colors hover:text-white ${
                   isActive ? "font-semibold text-white" : "text-white/60"
                 }`}
               >
@@ -303,6 +323,38 @@ export default function Navbar() {
               </NavLink>
             );
           })}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsComicsMenuOpen((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={isComicsMenuOpen}
+              className={`inline-flex h-10 items-center gap-1 text-[13px] transition-colors hover:text-white ${
+                location.pathname.startsWith("/comics") ? "font-semibold text-white" : "text-white/60"
+              }`}
+            >
+              Comics
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isComicsMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+            {isComicsMenuOpen && (
+              <div
+                role="menu"
+                aria-label="Comic categories"
+                className="absolute left-0 top-full z-50 mt-3 min-w-40 rounded-xl border border-white/10 bg-[#111216] p-1.5 shadow-xl shadow-black/40"
+              >
+                {comicCategories.map((category) => (
+                  <NavLink
+                    key={category}
+                    role="menuitem"
+                    to={`/comics/category/${category}`}
+                    className={({ isActive }) => `block rounded-lg px-3 py-2 text-sm transition ${isActive ? "bg-white/10 text-white" : "text-white/65 hover:bg-white/[0.06] hover:text-white"}`}
+                  >
+                    {category}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         <div className="ml-auto hidden md:block">{searchPanel()}</div>
@@ -364,6 +416,20 @@ export default function Navbar() {
                 </NavLink>
               );
             })}
+            <div className="col-span-2 mt-1 border-t border-white/[0.07] pt-2">
+              <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">Comics</p>
+              <div className="grid grid-cols-2 gap-1">
+                {comicCategories.map((category) => (
+                  <NavLink
+                    key={category}
+                    to={`/comics/category/${category}`}
+                    className={({ isActive }) => `rounded-lg px-3 py-3 text-sm transition ${isActive ? "bg-white/10 font-medium text-white" : "text-white/65 hover:bg-white/[0.06] hover:text-white"}`}
+                  >
+                    {category}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           </div>
         </nav>
       )}

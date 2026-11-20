@@ -4,6 +4,7 @@ import type {
   AnimePlayback,
   AnimeTitle,
 } from "@/features/anime/types/anime";
+import { searchQueryVariants } from "@/shared/lib/searchQueryVariants";
 
 const API_BASE_URL = "/ponflix-anime-api";
 const FEED_CACHE_TTL: Record<string, number> = {
@@ -97,11 +98,35 @@ export async function searchAnime(
   query: string,
   signal?: AbortSignal
 ): Promise<AnimeTitle[]> {
-  const payload = await request<{ data?: AnimeTitle[] }>(
-    `/api/search?q=${encodeURIComponent(query)}`,
-    signal
+  const variants = searchQueryVariants(query);
+  if (!variants.length) return [];
+
+  const searches = await Promise.allSettled(
+    variants.map((variant) =>
+      request<{ data?: AnimeTitle[] }>(
+        `/api/search?q=${encodeURIComponent(variant)}`,
+        signal
+      )
+    )
   );
-  return Array.isArray(payload.data) ? payload.data : [];
+  const successful = searches.filter(
+    (result): result is PromiseFulfilledResult<{ data?: AnimeTitle[] }> =>
+      result.status === "fulfilled"
+  );
+  if (!successful.length) {
+    if (signal?.aborted) throw new DOMException("The request was aborted.", "AbortError");
+    const failed = searches.find(
+      (result): result is PromiseRejectedResult => result.status === "rejected"
+    );
+    throw failed?.reason ?? new Error("Anime search is unavailable.");
+  }
+
+  const unique = new Map<string, AnimeTitle>();
+  successful.forEach(({ value }) => {
+    if (!Array.isArray(value.data)) return;
+    value.data.forEach((anime) => unique.set(anime.slug, anime));
+  });
+  return [...unique.values()];
 }
 
 export async function fetchAnimeDetails(

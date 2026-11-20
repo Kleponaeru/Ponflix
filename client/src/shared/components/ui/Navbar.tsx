@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ChevronDown, Menu, Search, X } from "lucide-react";
-import { titleFromLink } from "@/features/comics/lib/manga-utils";
+import { searchMangaTitles } from "@/features/comics/api/mangaService";
 import { searchAnime } from "@/features/anime/api/animeService";
 import { movieImage, searchMovies } from "@/features/movies/api/movieService";
 
@@ -14,8 +14,6 @@ interface SearchResult {
   link: string;
 }
 
-const API_BASE_URL = "https://ponflix-comics-api.vercel.app/api.php";
-
 function categoryForComic(type?: string) {
   const normalized = type?.toLowerCase() || "";
   if (normalized.includes("manhwa")) return "Manhwa";
@@ -24,30 +22,17 @@ function categoryForComic(type?: string) {
 }
 
 async function searchComicTitles(query: string, signal: AbortSignal): Promise<SearchResult[]> {
-  const response = await fetch(
-    `${API_BASE_URL}?s=${encodeURIComponent(query)}&page=1`,
-    { headers: { Accept: "application/json" }, signal }
-  );
-  if (!response.ok) throw new Error("Comic search is unavailable right now.");
-
-  const data = await response.json();
-  if (!Array.isArray(data?.data?.komik)) return [];
-
-  return data.data.komik.slice(0, 6).flatMap((comic: any) => {
-    const id = comic.link?.split("/").filter(Boolean).pop();
-    if (!id) return [];
-    const category = categoryForComic(comic.tipe);
-    return [{
-      id,
-      title:
-        comic.judul && comic.judul !== "Tidak ada judul"
-          ? comic.judul
-          : titleFromLink(comic.link),
-      image: comic.gambar || "",
-      type: comic.tipe || category,
+  const manga = await searchMangaTitles(query, signal);
+  return manga.slice(0, 6).map((item) => {
+    const category = categoryForComic(item.type);
+    return {
+      id: item.id,
+      title: item.title,
+      image: item.imageUrl,
+      type: item.type || category,
       category,
-      link: `/comics/${id}`,
-    }];
+      link: `/comics/${item.id}`,
+    };
   });
 }
 
@@ -93,7 +78,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const isAnimeSearch = location.pathname.startsWith("/anime");
   const isMovieSearch = location.pathname.startsWith("/movies");
-  const isHomeSearch = location.pathname === "/home";
+  const isHomeSearch = location.pathname === "/home" || location.pathname === "/search";
+  const isComicsSearch = location.pathname.startsWith("/comics");
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isComicsMenuOpen, setIsComicsMenuOpen] = useState(false);
@@ -128,18 +114,16 @@ export default function Navbar() {
       try {
         let results: SearchResult[];
         if (isHomeSearch) {
-          const [animeResult, comicResult, movieResult] = await Promise.all([
+          const [animeResult, comicResult] = await Promise.all([
             settle(searchAnime(query, controller.signal)),
             settle(searchComicTitles(query, controller.signal)),
-            settle(mapMovieSearchResults(query, controller.signal)),
           ]);
-          if (!animeResult.ok && !comicResult.ok && !movieResult.ok) {
+          if (!animeResult.ok && !comicResult.ok) {
             throw animeResult.error;
           }
           results = [
             ...(animeResult.ok ? mapAnimeSearchResults(animeResult.data) : []),
             ...(comicResult.ok ? comicResult.data : []),
-            ...(movieResult.ok ? movieResult.data : []),
           ];
         } else if (isAnimeSearch) {
           results = mapAnimeSearchResults(await searchAnime(query, controller.signal));
@@ -195,8 +179,14 @@ export default function Navbar() {
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if ((isAnimeSearch || isMovieSearch) && searchQuery.trim()) {
-      const section = isAnimeSearch ? "/anime/search" : "/movies";
+    if (searchQuery.trim()) {
+      const section = isAnimeSearch
+        ? "/anime/search"
+        : isMovieSearch
+          ? "/movies"
+          : isComicsSearch
+            ? "/comics/search"
+            : "/search";
       navigate(`${section}?q=${encodeURIComponent(searchQuery.trim())}`);
       closeSearch();
       return;

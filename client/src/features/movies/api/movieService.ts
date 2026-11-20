@@ -4,6 +4,7 @@ import type {
   MoviePerson,
   MovieProviderRegion,
 } from "@/features/movies/types/movie";
+import { searchQueryVariants } from "@/shared/lib/searchQueryVariants";
 
 const API_BASE_URL = "/ponflix-movie-api";
 
@@ -60,8 +61,40 @@ export function discoverMovies(
 }
 
 export function searchMovies(query: string, page = 1, signal?: AbortSignal) {
-  const params = new URLSearchParams({ query, page: String(page) });
-  return request<MovieSearchPage>(`/api/tmdb/search?${params.toString()}`, signal);
+  const variants = searchQueryVariants(query);
+  if (!variants.length) {
+    return Promise.resolve({ page, data: [], totalPages: 0, total: 0 });
+  }
+
+  const searches = variants.map((variant) => {
+    const params = new URLSearchParams({ query: variant, page: String(page) });
+    return request<MovieSearchPage>(`/api/tmdb/search?${params.toString()}`, signal);
+  });
+
+  return Promise.allSettled(searches).then((results) => {
+    const successful = results.filter(
+      (result): result is PromiseFulfilledResult<MovieSearchPage> =>
+        result.status === "fulfilled"
+    );
+    if (!successful.length) {
+      if (signal?.aborted) throw new DOMException("The request was aborted.", "AbortError");
+      const failed = results.find(
+        (result): result is PromiseRejectedResult => result.status === "rejected"
+      );
+      throw failed?.reason ?? new Error("Movie search is unavailable.");
+    }
+
+    const unique = new Map<number, Movie>();
+    successful.forEach(({ value }) => {
+      value.data.forEach((movie) => unique.set(movie.id, movie));
+    });
+    return {
+      ...successful[0].value,
+      data: [...unique.values()],
+      totalPages: Math.max(...successful.map(({ value }) => value.totalPages)),
+      total: unique.size,
+    };
+  });
 }
 
 export function fetchMovieGenres(signal?: AbortSignal) {

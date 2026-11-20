@@ -16,6 +16,7 @@ const AnimeWatch = lazy(() => import("@/features/anime/pages/AnimeWatch"));
 const AnimeLayout = lazy(() => import("@/features/anime/components/AnimeLayout"));
 const MoviesHome = lazy(() => import("@/features/movies/pages/MoviesHome"));
 const MovieDetail = lazy(() => import("@/features/movies/pages/MovieDetail"));
+const SearchResults = lazy(() => import("@/shared/pages/SearchResults"));
 
 export default function App() {
   const { pathname } = useLocation();
@@ -42,7 +43,9 @@ export default function App() {
           </Route>
           <Route element={<ComicsLayout />}>
             <Route path="/home" element={<MangaRows />} />
+            <Route path="/search" element={<SearchResults scope="all" />} />
             <Route path="/comics" element={<Navigate to="/home" replace />} />
+            <Route path="/comics/search" element={<SearchResults scope="comics" />} />
             <Route path="/comics/category/:type" element={<CategoriesManga />} />
             <Route path="/comics/:id" element={<MangaDetail />} />
           </Route>

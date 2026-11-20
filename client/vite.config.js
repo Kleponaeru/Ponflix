@@ -22,6 +22,9 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: [
+      "panhandle-reconfirm-shrivel.ngrok-free.dev"
+    ],
     proxy: {
       "/ponflix-anime-api": animeApiProxy,
       "/ponflix-movie-api": movieApiProxy,

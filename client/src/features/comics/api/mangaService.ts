@@ -2,6 +2,7 @@ import type { MangaListItem } from "@/features/comics/types/manga-list";
 import type { MangaChapter } from "@/features/comics/types/manga";
 import { normalizeManga } from "@/features/comics/utils/normalizeManga";
 import { extractSlug } from "@/features/comics/utils/extractSlug";
+import { searchQueryVariants } from "@/shared/lib/searchQueryVariants";
 
 const API_BASE_URL = "https://ponflix-comics-api.vercel.app/api.php";
 const CHAPTER_CACHE_TTL = 5 * 60 * 1000;
@@ -9,6 +10,45 @@ const chapterCache = new Map<
   string,
   { chapters: MangaChapter[]; expiresAt: number }
 >();
+
+export async function searchMangaTitles(
+  query: string,
+  signal?: AbortSignal
+): Promise<MangaListItem[]> {
+  const variants = searchQueryVariants(query);
+  if (!variants.length) return [];
+
+  const searches = await Promise.allSettled(
+    variants.map(async (variant) => {
+      const params = new URLSearchParams({ s: variant, page: "1" });
+      const response = await fetch(`${API_BASE_URL}?${params}`, {
+        headers: { Accept: "application/json" },
+        signal,
+      });
+      if (!response.ok) throw new Error("Comic search is unavailable right now.");
+
+      const payload = await response.json();
+      return Array.isArray(payload?.data?.komik)
+        ? normalizeManga(payload.data.komik)
+        : [];
+    })
+  );
+  const successful = searches.filter(
+    (result): result is PromiseFulfilledResult<MangaListItem[]> =>
+      result.status === "fulfilled"
+  );
+  if (!successful.length) {
+    if (signal?.aborted) throw new DOMException("The request was aborted.", "AbortError");
+    const failed = searches.find(
+      (result): result is PromiseRejectedResult => result.status === "rejected"
+    );
+    throw failed?.reason ?? new Error("Comic search is unavailable right now.");
+  }
+
+  const unique = new Map<string, MangaListItem>();
+  successful.forEach(({ value }) => value.forEach((manga) => unique.set(manga.id, manga)));
+  return [...unique.values()];
+}
 
 export async function fetchFirstChapterSlug(
   mangaId: string

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import ComicsLayout from "@/app/layouts/ComicsLayout";
 import MoviesLayout from "@/app/layouts/MoviesLayout";
@@ -22,6 +22,24 @@ export default function App() {
   const { pathname } = useLocation();
   const navigationType = useNavigationType();
   const hasMounted = useRef(false);
+  const [showInitialSplash, setShowInitialSplash] = useState(true);
+  const [initialRouteReady, setInitialRouteReady] = useState(false);
+  const [minimumSplashTimeElapsed, setMinimumSplashTimeElapsed] = useState(false);
+
+  const markInitialRouteReady = useCallback(() => {
+    setInitialRouteReady(true);
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setMinimumSplashTimeElapsed(true), 1800);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
+    if (initialRouteReady && minimumSplashTimeElapsed) {
+      setShowInitialSplash(false);
+    }
+  }, [initialRouteReady, minimumSplashTimeElapsed]);
 
   useLayoutEffect(() => {
     if (!hasMounted.current || navigationType !== "POP") {
@@ -31,31 +49,34 @@ export default function App() {
   }, [navigationType, pathname]);
 
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Routes>
-        <Route element={<SiteLayout />}>
-          <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route element={<AnimeLayout />}>
-            <Route path="/anime" element={<AnimeHome />} />
-            <Route path="/anime/search" element={<AnimeSearch />} />
-            <Route path="/anime/:slug/episode/:episodeSlug" element={<AnimeWatch />} />
-            <Route path="/anime/:slug" element={<AnimeDetail />} />
+    <>
+      <Suspense fallback={showInitialSplash ? null : <PageLoader />}>
+        <Routes>
+          <Route element={<SiteLayout onContentReady={markInitialRouteReady} />}>
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route element={<AnimeLayout />}>
+              <Route path="/anime" element={<AnimeHome />} />
+              <Route path="/anime/search" element={<AnimeSearch />} />
+              <Route path="/anime/:slug/episode/:episodeSlug" element={<AnimeWatch />} />
+              <Route path="/anime/:slug" element={<AnimeDetail />} />
+            </Route>
+            <Route element={<ComicsLayout />}>
+              <Route path="/home" element={<MangaRows />} />
+              <Route path="/search" element={<SearchResults scope="all" />} />
+              <Route path="/comics" element={<Navigate to="/home" replace />} />
+              <Route path="/comics/search" element={<SearchResults scope="comics" />} />
+              <Route path="/comics/category/:type" element={<CategoriesManga />} />
+              <Route path="/comics/:id" element={<MangaDetail />} />
+            </Route>
+            <Route element={<MoviesLayout />}>
+              <Route path="/movies" element={<MoviesHome />} />
+              <Route path="/movies/:id" element={<MovieDetail />} />
+            </Route>
+            <Route path="/comics/:id/chapter/:chapterId" element={<ChapterReader />} />
           </Route>
-          <Route element={<ComicsLayout />}>
-            <Route path="/home" element={<MangaRows />} />
-            <Route path="/search" element={<SearchResults scope="all" />} />
-            <Route path="/comics" element={<Navigate to="/home" replace />} />
-            <Route path="/comics/search" element={<SearchResults scope="comics" />} />
-            <Route path="/comics/category/:type" element={<CategoriesManga />} />
-            <Route path="/comics/:id" element={<MangaDetail />} />
-          </Route>
-          <Route element={<MoviesLayout />}>
-            <Route path="/movies" element={<MoviesHome />} />
-            <Route path="/movies/:id" element={<MovieDetail />} />
-          </Route>
-          <Route path="/comics/:id/chapter/:chapterId" element={<ChapterReader />} />
-        </Route>
-      </Routes>
-    </Suspense>
+        </Routes>
+      </Suspense>
+      {showInitialSplash && <PageLoader />}
+    </>
   );
 }

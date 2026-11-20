@@ -1,15 +1,16 @@
 <title>Ponflix Loader</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">
 <style>
 /* Layout: logo centered on an open field, progress line beneath, counter right-aligned under it. */
 @property --n { syntax: "<integer>"; inherits: false; initial-value: 0; }
 :root {
-  --bg: #fbfafa;
-  --fg: #1d1a1b;
-  --muted: #8a8486;
-  --track: #e9e4e5;
+  --bg: #0d0b0c;
+  --fg: #f3eeef;
+  --muted: #8f8789;
+  --track: #2a2527;
   --red: #dc202c;
+  color-scheme: dark;
   --display: "Bebas Neue", "Oswald", Impact, "Arial Narrow", sans-serif;
   --loop: 4.2s;
 }
@@ -20,6 +21,7 @@
 html, body { height: 100%; }
 body {
   background: var(--bg); color: var(--fg);
+  margin: 0;
   padding-block: 1rem;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
